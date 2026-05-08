@@ -85,6 +85,113 @@ It adds two optional fields to offers:
 - `button_label` - text like `Buy Now`, `Follow Us`, or `Order Here`
 - `button_url` - the link opened when visitors click that button
 
+## Add the AI Customer Conversion Engine
+
+To enable the floating AI chatbot and the separate admin controls, run this SQL file in Supabase:
+
+`supabase/migrations/006_ai_conversion_engine.sql`
+
+Tiny steps:
+
+1. In Supabase, click `SQL Editor`.
+2. Click `New query`.
+3. Open `supabase/migrations/006_ai_conversion_engine.sql` from this project.
+4. Copy everything inside it.
+5. Paste it into Supabase.
+6. Click `Run`.
+
+This adds:
+
+- chatbot on/off settings
+- editable welcome, lead capture, WhatsApp, and offline messages
+- chatbot questions and answers
+- chatbot products/services
+- chatbot offers
+- AI lead capture table
+- chat event tracking table
+- secure public/admin Supabase policies
+
+If you already ran this migration before AI API controls were added, run this tiny SQL too:
+
+```sql
+alter table public.chatbot_settings
+add column if not exists ai_enabled boolean not null default false,
+add column if not exists ai_api_url text,
+add column if not exists ai_system_prompt text not null default 'You are a helpful sales assistant. Answer naturally using only the business knowledge provided. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.';
+```
+
+## Free AI Setup Like Tiny Steps
+
+Important truth: no hosted AI company can promise free forever. For 100% free lifetime, use open-source AI on your own computer/server. This project supports that through `ai-server`.
+
+### Step 1: Deploy AI Bridge on Render
+
+1. Push this project to GitHub.
+2. Go to `https://render.com`.
+3. Sign in.
+4. Click `New`.
+5. Click `Web Service`.
+6. Connect your GitHub repo.
+7. Set `Root Directory` to:
+
+   `ai-server`
+
+8. Set `Build Command`:
+
+   `npm install`
+
+9. Set `Start Command`:
+
+   `npm start`
+
+10. Choose the `Free` instance.
+11. Click `Create Web Service`.
+12. Wait until deploy finishes.
+13. Copy your Render URL. It will look like:
+
+   `https://company-review-ai-server.onrender.com`
+
+14. Test this URL in browser:
+
+   `https://company-review-ai-server.onrender.com/health`
+
+You should see JSON with `"ok": true`.
+
+### Step 2: Connect It in Admin Panel
+
+1. Open admin panel.
+2. Click AI navigation: `Chatbot`.
+3. Paste your Render URL into `AI API URL`.
+4. Turn on `AI Reply Enabled`.
+5. Click `Save Chatbot`.
+6. Open public site and ask a question.
+
+### Step 3: Make It Real AI With Ollama
+
+The Render bridge works alone, but for real open-source AI answers you need Ollama.
+
+1. Install Ollama on your computer from `https://ollama.com`.
+2. Open terminal.
+3. Run:
+
+   `ollama pull llama3.2:1b`
+
+4. Run:
+
+   `ollama serve`
+
+5. Your Ollama runs locally at:
+
+   `http://localhost:11434`
+
+Render cannot directly access your `localhost`. To connect local Ollama to Render, expose it with a tunnel such as Cloudflare Tunnel or another HTTPS tunnel, then set Render env var:
+
+`OLLAMA_BASE_URL=https://your-tunnel-url`
+
+If `OLLAMA_BASE_URL` is empty, the AI server still gives knowledge-based smart replies, but it is not a full LLM.
+
+Render free web services can spin down after idle time and have monthly limits. That is okay for testing, but for always-instant production, use a paid server or run the AI bridge on your own always-on machine.
+
 ## Create the Admin Login
 
 1. In Supabase, click `Authentication`.
@@ -130,6 +237,13 @@ npm.cmd run dev:admin
 3. Sign in with the email and password you created.
 4. Edit logo, name, tagline, color, contacts, socials, map, VCF, and offers.
 5. Click `Save Settings`.
+
+The admin panel has two navigation rows:
+
+- Main business card navigation: `Overview`, `Brand`, `Contact`, `Social`, `Content`
+- AI automation navigation: `Chatbot`, `Q&A`, `Products`, `Leads`
+
+Use the AI automation navigation to control the public chatbot without editing code.
 
 ## God Level Controls
 

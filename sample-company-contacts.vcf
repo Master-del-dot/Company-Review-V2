@@ -1,0 +1,38 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Naushad Ali
+N:Ali;Naushad;;;
+ORG:Your Company Name
+TITLE:Owner
+TEL;TYPE=CELL:+9779800000001
+EMAIL:owner@example.com
+URL:https://example.com
+ADR;TYPE=WORK:;;Company Street Address;City;State;Postal Code;Country
+NOTE:Main owner contact
+END:VCARD
+
+BEGIN:VCARD
+VERSION:3.0
+FN:Sales Team
+N:Team;Sales;;;
+ORG:Your Company Name
+TITLE:Sales
+TEL;TYPE=CELL:+9779800000002
+EMAIL:sales@example.com
+URL:https://example.com
+ADR;TYPE=WORK:;;Company Street Address;City;State;Postal Code;Country
+NOTE:Contact for pricing, orders, and quotes
+END:VCARD
+
+BEGIN:VCARD
+VERSION:3.0
+FN:Support Team
+N:Team;Support;;;
+ORG:Your Company Name
+TITLE:Customer Support
+TEL;TYPE=CELL:+9779800000003
+EMAIL:support@example.com
+URL:https://example.com
+ADR;TYPE=WORK:;;Company Street Address;City;State;Postal Code;Country
+NOTE:Contact for support and service help
+END:VCARD
