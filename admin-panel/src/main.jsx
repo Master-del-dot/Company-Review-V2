@@ -1271,35 +1271,66 @@ function Dashboard() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function escapeExportHtml(value) {
+    return String(value ?? "").replace(/[<>&"']/g, (char) => ({
+      "<": "&lt;",
+      ">": "&gt;",
+      "&": "&amp;",
+      "\"": "&quot;",
+      "'": "&#39;",
+    })[char]);
+  }
+
   function exportRowsPdf(title, rows, headers) {
     const htmlRows = rows
-      .map((row) => `<tr>${headers.map((key) => `<td>${String(row[key] || "").replace(/[<>&]/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[char])}</td>`).join("")}</tr>`)
+      .map((row) => `<tr>${headers.map((key) => `<td>${escapeExportHtml(row[key])}</td>`).join("")}</tr>`)
       .join("");
-    const popup = window.open("", "_blank", "noopener,noreferrer");
-    if (!popup) return;
-    popup.document.write(`
+    const iframe = document.createElement("iframe");
+    iframe.title = `${title} PDF export`;
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+
+    const html = `<!doctype html>
       <html>
         <head>
-          <title>${title}</title>
+          <meta charset="utf-8" />
+          <title>${escapeExportHtml(title)}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 24px; color: #16211f; }
-            h1 { font-size: 22px; margin: 0 0 16px; }
-            table { width: 100%; border-collapse: collapse; font-size: 11px; }
-            th, td { border: 1px solid #c9d8d5; padding: 7px; text-align: left; vertical-align: top; }
-            th { background: #03736e; color: #fff; }
+            @page { size: A4 landscape; margin: 12mm; }
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; margin: 0; color: #16211f; }
+            h1 { font-size: 22px; margin: 0 0 6px; }
+            .export-meta { margin: 0 0 16px; color: #64726f; font-size: 11px; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }
+            th, td { border: 1px solid #c9d8d5; padding: 7px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+            th { background: #03736e; color: #fff; font-size: 10px; text-transform: capitalize; }
+            tr { break-inside: avoid; page-break-inside: avoid; }
           </style>
         </head>
         <body>
-          <h1>${title}</h1>
+          <h1>${escapeExportHtml(title)}</h1>
+          <p class="export-meta">Generated ${escapeExportHtml(new Date().toLocaleString())}</p>
           <table>
-            <thead><tr>${headers.map((key) => `<th>${key.replace(/_/g, " ")}</th>`).join("")}</tr></thead>
+            <thead><tr>${headers.map((key) => `<th>${escapeExportHtml(key.replace(/_/g, " "))}</th>`).join("")}</tr></thead>
             <tbody>${htmlRows || `<tr><td colspan="${headers.length}">No records</td></tr>`}</tbody>
           </table>
-          <script>window.print();</script>
         </body>
-      </html>
-    `);
-    popup.document.close();
+      </html>`;
+
+    iframe.onload = () => {
+      const printWindow = iframe.contentWindow;
+      if (!printWindow) return;
+      printWindow.focus();
+      printWindow.print();
+      window.setTimeout(() => iframe.remove(), 1000);
+    };
+
+    document.body.appendChild(iframe);
+    iframe.srcdoc = html;
   }
 
   async function exportLeadsCsv() {
