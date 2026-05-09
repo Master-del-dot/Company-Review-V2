@@ -415,6 +415,27 @@ a {
   font-size: 18px;
 }
 
+.developer-contact-footer {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 2px;
+  text-align: center;
+}
+
+.developer-contact-footer a {
+  min-height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  color: var(--developer-contact-text, #ffffff);
+  background: var(--developer-contact-bg, #25d366);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--developer-contact-bg, #25d366) 24%, transparent);
+}
+
 .custom-sections {
   display: grid;
   gap: 10px;

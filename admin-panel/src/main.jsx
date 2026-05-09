@@ -94,6 +94,7 @@ const defaultSettings = {
   show_visitor_count: true,
   show_offer_popup: true,
   show_chatbot_section: true,
+  show_developer_contact_section: true,
   section_order: [
     "identity",
     "quick_contact",
@@ -108,6 +109,7 @@ const defaultSettings = {
     "primary_cta",
     "location",
     "visitor_count",
+    "developer_contact",
   ],
   text_owner_card_kicker: "Owner Visiting Card",
   text_add_contact_button: "Add to Contact",
@@ -152,6 +154,11 @@ const defaultSettings = {
   show_detail_form_email: true,
   show_detail_form_message: true,
   detail_form_fields: [],
+  developer_contact_label: "Contact Developer",
+  developer_contact_whatsapp_number: "+9779827305718",
+  developer_contact_message: "Hi developer, I need help with this digital business card.",
+  developer_contact_button_color: "#25d366",
+  developer_contact_button_text_color: "#ffffff",
   admin_module_locks: {},
 };
 
@@ -169,11 +176,13 @@ const sectionControls = [
   { id: "primary_cta", label: "Primary CTA Button", setting: "show_primary_cta_section" },
   { id: "location", label: "Location / Map", setting: "show_location_section" },
   { id: "visitor_count", label: "Visitor Counter", setting: "show_visitor_count" },
+  { id: "developer_contact", label: "Contact Developer Button", setting: "show_developer_contact_section" },
 ];
 
 const defaultModuleOrder = [
   "account",
   "admin-locks",
+  "developer-centre",
   "brand",
   "contact",
   "social",
@@ -274,6 +283,7 @@ function humanizeKey(key) {
 }
 
 function getSettingSearchSection(key) {
+  if (key.includes("developer_contact")) return "developer-centre";
   if (key.includes("chat")) return "chatbot";
   if (key.includes("lead") || key.includes("analytics") || key.includes("visitor") || key.includes("countdown")) return "analytics-dashboard";
   if (key.includes("followup") || key.includes("follow_up") || key.includes("auto_followup")) return "follow-up";
@@ -545,6 +555,7 @@ function Dashboard() {
   const moduleCards = [
     { id: "account", label: "Admin Account", description: "Email and password settings", icon: <UserCog size={28} /> },
     { id: "admin-locks", label: "Admin Locks", description: "Lock toggles and section passwords", icon: <ShieldCheck size={28} /> },
+    { id: "developer-centre", label: "Developer Centre", description: "Public developer contact button", icon: <MessageSquareText size={28} /> },
     { id: "brand", label: "Branding", description: "Logo, colors, owner card, backgrounds", icon: <Brush size={28} /> },
     { id: "contact", label: "Contact", description: "Phone, email, map, hours, CTA", icon: <Contact size={28} /> },
     { id: "social", label: "Social", description: "Social links and custom icons", icon: <Share2 size={28} /> },
@@ -1667,6 +1678,54 @@ function Dashboard() {
             <span>Unlocked This Session</span>
             <strong>{Object.keys(unlockedAdminModules).length}</strong>
           </div>
+        </div>
+      </section>
+
+      <section className="panel dashboard-section" hidden={activeSection !== "developer-centre"}>
+        <div className="panel-heading">
+          <h2><MessageSquareText size={20} /> Developer Centre</h2>
+          <button className="primary-button" onClick={saveSettings} type="button">
+            <Save size={18} />
+            Save Developer Centre
+          </button>
+        </div>
+        <p className="form-message">
+          Controls the centered Contact Developer button at the bottom of the public page.
+        </p>
+        <div className="form-grid color-grid">
+          <ToggleField
+            label="Show Contact Developer Button"
+            checked={settings.show_developer_contact_section}
+            onChange={(value) => updateSetting("show_developer_contact_section", value)}
+          />
+          <Field
+            label="Button Label"
+            value={settings.developer_contact_label}
+            onChange={(value) => updateSetting("developer_contact_label", value)}
+          />
+          <Field
+            label="WhatsApp Number"
+            value={settings.developer_contact_whatsapp_number}
+            onChange={(value) => updateSetting("developer_contact_whatsapp_number", value)}
+          />
+          <Field
+            label="WhatsApp Message"
+            textarea
+            value={settings.developer_contact_message}
+            onChange={(value) => updateSetting("developer_contact_message", value)}
+          />
+          <Field
+            label="Button Background"
+            type="color"
+            value={settings.developer_contact_button_color}
+            onChange={(value) => updateSetting("developer_contact_button_color", value)}
+          />
+          <Field
+            label="Button Text"
+            type="color"
+            value={settings.developer_contact_button_text_color}
+            onChange={(value) => updateSetting("developer_contact_button_text_color", value)}
+          />
         </div>
       </section>
 

@@ -109,6 +109,7 @@ const fallbackSettings = {
   show_visitor_count: true,
   show_offer_popup: true,
   show_chatbot_section: true,
+  show_developer_contact_section: true,
   section_order: [
     "identity",
     "quick_contact",
@@ -123,6 +124,7 @@ const fallbackSettings = {
     "primary_cta",
     "location",
     "visitor_count",
+    "developer_contact",
   ],
   text_owner_card_kicker: "Owner Visiting Card",
   text_add_contact_button: "Add to Contact",
@@ -167,6 +169,11 @@ const fallbackSettings = {
   show_detail_form_email: true,
   show_detail_form_message: true,
   detail_form_fields: [],
+  developer_contact_label: "Contact Developer",
+  developer_contact_whatsapp_number: "+9779827305718",
+  developer_contact_message: "Hi developer, I need help with this digital business card.",
+  developer_contact_button_color: "#25d366",
+  developer_contact_button_text_color: "#ffffff",
 };
 
 const orderedSectionDefaults = fallbackSettings.section_order;
@@ -185,6 +192,13 @@ function normalizeUrl(value) {
     return value;
   }
   return `https://${value}`;
+}
+
+function buildWhatsAppUrl(number, message) {
+  const digits = String(number || "").replace(/[^\d]/g, "");
+  if (!digits) return "";
+  const text = message ? `?text=${encodeURIComponent(message)}` : "";
+  return `https://wa.me/${digits}${text}`;
 }
 
 function getMapSrc(embedCode) {
@@ -990,6 +1004,7 @@ function App() {
   const showVisitorCount = settings.show_visitor_count !== false;
   const showOfferPopup = settings.show_offer_popup !== false;
   const showChatbot = settings.show_chatbot_section !== false;
+  const showDeveloperContact = settings.show_developer_contact_section !== false && Boolean(settings.developer_contact_whatsapp_number);
   const showUploadedCard =
     settings.show_uploaded_card_section !== false &&
     settings.visiting_card_display_mode !== "background" &&
@@ -1056,6 +1071,10 @@ function App() {
     "--accent": settings.accent_color || brandColor,
     "--page-bg-media": pageBackgroundImage ? `url("${pageBackgroundImage}")` : "none",
   };
+  const developerContactHref = buildWhatsAppUrl(
+    settings.developer_contact_whatsapp_number,
+    settings.developer_contact_message,
+  );
 
   async function shareSite() {
     trackEvent("share_open", "share");
@@ -1393,6 +1412,22 @@ function App() {
           <footer className="visitor-count" key={sectionId}>
             <span>{settings.text_visitor_count_label || fallbackSettings.text_visitor_count_label}</span>
             <strong>{loading ? "..." : visitorCount.toLocaleString()}</strong>
+          </footer>
+        );
+      case "developer_contact":
+        if (!showDeveloperContact) return null;
+        return (
+          <footer className="developer-contact-footer" key={sectionId}>
+            <a
+              href={developerContactHref}
+              onClick={() => trackEvent("developer_contact_click", "click")}
+              style={{
+                "--developer-contact-bg": settings.developer_contact_button_color || fallbackSettings.developer_contact_button_color,
+                "--developer-contact-text": settings.developer_contact_button_text_color || fallbackSettings.developer_contact_button_text_color,
+              }}
+            >
+              {settings.developer_contact_label || fallbackSettings.developer_contact_label}
+            </a>
           </footer>
         );
       default:
