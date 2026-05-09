@@ -120,6 +120,14 @@ a {
   box-shadow: 0 18px 38px rgba(3, 49, 46, 0.14);
 }
 
+.logo-ring.rounded-square {
+  border-radius: 18px;
+}
+
+.logo-ring.square {
+  border-radius: 8px;
+}
+
 .logo-ring img {
   width: 100%;
   height: 100%;
@@ -152,9 +160,9 @@ a {
   align-items: center;
   margin: 8px 0 16px;
   padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid var(--owner-card-border, color-mix(in srgb, var(--accent) 18%, transparent));
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--owner-card-bg, #ffffff);
   box-shadow: 0 12px 28px rgba(20, 30, 28, 0.08);
 }
 
@@ -180,7 +188,7 @@ a {
 
 .owner-kicker {
   margin: 0 0 4px;
-  color: var(--accent);
+  color: var(--owner-card-label, var(--accent));
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
@@ -188,7 +196,7 @@ a {
 
 .owner-card h2 {
   margin: 0;
-  color: var(--heading);
+  color: var(--owner-card-name, var(--heading));
   font-size: 19px;
   line-height: 1.15;
 }
@@ -196,8 +204,12 @@ a {
 .owner-card strong {
   display: block;
   margin-top: 3px;
-  color: #17211f;
+  color: var(--owner-card-title, #17211f);
   font-size: 13px;
+}
+
+.owner-card p {
+  color: var(--owner-card-text, var(--body-text));
 }
 
 .owner-card p:last-child {
@@ -436,6 +448,18 @@ a {
   box-shadow: 0 10px 24px color-mix(in srgb, var(--developer-contact-bg, #25d366) 24%, transparent);
 }
 
+.developer-contact-footer a.text-only {
+  min-height: auto;
+  border-radius: 0;
+  padding: 0;
+  color: var(--developer-contact-text, var(--accent));
+  background: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+}
+
 .custom-sections {
   display: grid;
   gap: 10px;
@@ -478,6 +502,43 @@ a {
   white-space: pre-line;
 }
 
+.company-video-section {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 16%, transparent);
+  background: #ffffff;
+}
+
+.company-video-section h2 {
+  margin: 0;
+  color: var(--heading);
+  font-size: 16px;
+}
+
+.company-video-section p {
+  margin: 5px 0 0;
+  color: var(--body-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.company-video-section video,
+.company-video-section iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  border: 0;
+  border-radius: 8px;
+  background: #0f1715;
+}
+
+.company-video-section video {
+  object-fit: contain;
+}
+
 .primary-cta {
   margin-bottom: 16px;
 }
@@ -486,9 +547,9 @@ a {
   display: grid;
   gap: 10px;
   padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid var(--custom-section-border, color-mix(in srgb, var(--accent) 16%, transparent));
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--custom-section-bg, #ffffff);
 }
 
 .custom-section.inline {
@@ -512,23 +573,29 @@ a {
 
 .custom-section h2 {
   margin: 0 0 4px;
-  color: var(--heading);
+  color: var(--custom-section-title, var(--heading));
   font-size: 16px;
 }
 
 .custom-section p {
   margin: 0;
-  color: var(--body-text);
+  color: var(--custom-section-text, var(--body-text));
   font-size: 14px;
   line-height: 1.45;
 }
 
 .section-link {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 10px;
-  color: var(--accent);
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: var(--custom-section-button-text, var(--accent));
+  background: var(--custom-section-button-bg, transparent);
   font-size: 14px;
   font-weight: 800;
+  text-decoration: none;
 }
 
 .share-dialog {
@@ -538,7 +605,7 @@ a {
   place-items: center;
   padding: 18px;
   background: rgba(9, 17, 15, 0.56);
-  z-index: 20;
+  z-index: 120;
 }
 
 .share-panel {
@@ -672,30 +739,86 @@ a {
   inset: 0;
   display: grid;
   place-items: center;
+  padding: 14px;
+  background: rgba(9, 17, 15, 0.58);
+  backdrop-filter: blur(8px);
+  z-index: 130;
+}
+
+.referral-popup {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
   padding: 18px;
   background: rgba(9, 17, 15, 0.58);
   backdrop-filter: blur(8px);
-  z-index: 90;
+  z-index: 132;
+}
+
+.referral-panel {
+  position: relative;
+  width: min(100%, 380px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 42px 20px 20px;
+  border-radius: 8px;
+  color: var(--referral-text, #17211f);
+  background: var(--referral-bg, #ffffff);
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(7, 18, 16, 0.32);
+}
+
+.referral-panel > img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #eef4f2;
+}
+
+.referral-panel h2 {
+  margin: 0;
+  color: var(--heading);
+  font-size: 22px;
+  line-height: 1.18;
+}
+
+.referral-panel p {
+  margin: 0;
+  color: var(--referral-text, var(--body-text));
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.referral-panel .offer-cta {
+  justify-self: center;
 }
 
 .offer-popup-panel {
   position: relative;
   z-index: 91;
-  width: min(100%, 380px);
-  max-height: calc(100vh - 36px);
-  overflow: hidden;
+  width: min(100%, 360px);
+  max-height: min(620px, calc(100vh - 28px));
+  overflow-y: auto;
+  scrollbar-width: none;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--offer-popup-bg, #ffffff);
   box-shadow: 0 24px 70px rgba(7, 18, 16, 0.32);
+}
+
+.offer-popup-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .offer-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   z-index: 2;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: 0;
   border-radius: 999px;
   color: #111111;
@@ -714,71 +837,74 @@ a {
   width: 100%;
   flex: 0 0 100%;
   display: grid;
-  gap: 14px;
+  gap: 10px;
+  background: var(--offer-popup-bg, #ffffff);
 }
 
 .offer-slide.no-image {
-  min-height: 340px;
+  min-height: 260px;
   align-content: center;
   background:
-    linear-gradient(135deg, rgba(3, 115, 110, 0.08), rgba(255, 255, 255, 0.92)),
-    #ffffff;
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), color-mix(in srgb, var(--offer-popup-bg, #ffffff) 92%, transparent)),
+    var(--offer-popup-bg, #ffffff);
 }
 
 .offer-slide img {
   width: 100%;
-  height: min(320px, 46vh);
+  height: clamp(150px, 32vh, 230px);
   display: block;
   object-fit: contain;
   background:
-    linear-gradient(135deg, rgba(3, 115, 110, 0.08), rgba(255, 255, 255, 0.72)),
-    #eef4f2;
-  border-bottom: 1px solid rgba(3, 115, 110, 0.1);
+    linear-gradient(135deg, color-mix(in srgb, var(--offer-popup-kicker, var(--accent)) 10%, transparent), color-mix(in srgb, var(--offer-popup-bg, #ffffff) 72%, transparent)),
+    var(--offer-popup-bg, #ffffff);
+  border-bottom: 1px solid color-mix(in srgb, var(--offer-popup-kicker, var(--accent)) 14%, transparent);
 }
 
 .offer-slide > div {
   display: grid;
-  gap: 8px;
-  padding: 0 18px 18px;
+  gap: 7px;
+  padding: 0 16px 14px;
+  color: var(--offer-popup-text, var(--body-text));
+  background: var(--offer-popup-bg, #ffffff);
 }
 
 .offer-slide.no-image > div {
-  padding: 34px 22px 24px;
+  padding: 28px 20px 20px;
   text-align: center;
   justify-items: center;
 }
 
 .offer-kicker {
   margin: 0;
-  color: var(--accent);
-  font-size: 12px;
+  color: var(--offer-popup-kicker, var(--accent));
+  font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .offer-slide h2 {
   margin: 0;
-  color: var(--heading);
-  font-size: 22px;
+  color: var(--offer-popup-heading, var(--heading));
+  font-size: 20px;
   line-height: 1.18;
 }
 
 .offer-slide p {
   margin: 0;
-  color: var(--body-text);
-  font-size: 14px;
-  line-height: 1.5;
+  color: var(--offer-popup-text, var(--body-text));
+  font-size: 13px;
+  line-height: 1.42;
 }
 
 .offer-cta {
-  min-height: 42px;
+  min-height: 40px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   justify-self: start;
   margin-top: 4px;
-  padding: 0 18px;
+  padding: 0 16px;
   color: var(--button-text);
   background: var(--button-bg);
   font-size: 14px;
@@ -796,18 +922,18 @@ a {
 
 .offer-countdown {
   display: grid;
-  gap: 9px;
-  margin-top: 12px;
-  padding: 12px;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 10px;
   border-radius: 8px;
-  color: #ffffff;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent) 86%, #111111), #17211f);
-  box-shadow: 0 12px 26px color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--offer-countdown-label, #ffffff);
+  background: var(--offer-countdown-bg, linear-gradient(135deg, color-mix(in srgb, var(--accent) 86%, #111111), #17211f));
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--offer-countdown-bg, var(--accent)) 24%, transparent);
 }
 
 .offer-countdown span {
-  font-size: 12px;
+  color: var(--offer-countdown-label, #ffffff);
+  font-size: 11px;
   font-weight: 900;
   opacity: 0.82;
   text-transform: uppercase;
@@ -816,7 +942,7 @@ a {
 .offer-countdown-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 7px;
+  gap: 6px;
 }
 
 .offer-countdown-grid strong {
@@ -824,18 +950,18 @@ a {
   display: grid;
   place-items: center;
   gap: 2px;
-  padding: 8px 4px;
+  padding: 7px 4px;
   border-radius: 8px;
-  color: #17211f;
-  background: #ffffff;
-  font-size: 20px;
+  color: var(--offer-countdown-number, #17211f);
+  background: var(--offer-countdown-box, #ffffff);
+  font-size: 18px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .offer-countdown-grid small {
-  color: #5e6b68;
-  font-size: 10px;
+  color: var(--offer-countdown-unit, #5e6b68);
+  font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -845,7 +971,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 0 18px 18px;
+  padding: 0 16px 14px;
 }
 
 .offer-controls button {
@@ -875,6 +1001,55 @@ a {
 
 .offer-dots button.active {
   background: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .offer-popup {
+    padding: 10px;
+  }
+
+  .offer-popup-panel {
+    width: min(100%, 342px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .offer-slide img {
+    height: clamp(132px, 28vh, 196px);
+  }
+
+  .offer-slide > div {
+    padding: 0 14px 12px;
+  }
+
+  .offer-slide.no-image {
+    min-height: 230px;
+  }
+
+  .offer-slide.no-image > div {
+    padding: 24px 16px 16px;
+  }
+
+  .offer-slide h2 {
+    font-size: 18px;
+  }
+
+  .offer-slide p {
+    font-size: 13px;
+  }
+
+  .offer-countdown {
+    margin-top: 6px;
+    padding: 9px;
+  }
+
+  .offer-countdown-grid strong {
+    padding: 6px 3px;
+    font-size: 16px;
+  }
+
+  .offer-controls {
+    padding: 0 14px 12px;
+  }
 }
 
 @media (min-width: 900px) {

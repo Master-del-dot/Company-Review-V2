@@ -29,6 +29,7 @@ import {
   UploadCloud,
   UserCog,
   Users,
+  Video,
 } from "lucide-react";
 import { hasSupabaseConfig, supabase } from "./supabase";
 import "./styles.css";
@@ -36,6 +37,7 @@ import "./styles.css";
 const defaultSettings = {
   id: 1,
   logo_url: "",
+  logo_shape: "circle",
   business_name: "restroelaichi",
   tagline: "Multi Cuisine Food | Cafe | Bar | Music | Karaoke",
   primary_color: "#03736e",
@@ -60,6 +62,11 @@ const defaultSettings = {
   instagram_icon_url: "",
   tiktok_icon_url: "",
   website_icon_url: "",
+  show_whatsapp_social: true,
+  show_facebook_social: true,
+  show_instagram_social: true,
+  show_tiktok_social: true,
+  show_website_social: true,
   address_text: "Shivachowk, Lalitpur 44700",
   google_maps_url: "",
   map_embed_code: "",
@@ -72,6 +79,12 @@ const defaultSettings = {
   owner_title: "",
   owner_photo_url: "",
   owner_bio: "",
+  owner_card_background_color: "#ffffff",
+  owner_card_border_color: "",
+  owner_card_label_color: "",
+  owner_card_name_color: "",
+  owner_card_title_color: "#17211f",
+  owner_card_text_color: "",
   visiting_card_image_url: "",
   visiting_card_display_mode: "section",
   show_uploaded_card_section: false,
@@ -95,6 +108,8 @@ const defaultSettings = {
   show_offer_popup: true,
   show_chatbot_section: true,
   show_developer_contact_section: true,
+  show_referral_offer: true,
+  show_company_video_section: false,
   section_order: [
     "identity",
     "quick_contact",
@@ -106,6 +121,7 @@ const defaultSettings = {
     "add_contact",
     "uploaded_card",
     "business_hours",
+    "company_video",
     "primary_cta",
     "location",
     "visitor_count",
@@ -157,8 +173,32 @@ const defaultSettings = {
   developer_contact_label: "Contact Developer",
   developer_contact_whatsapp_number: "+9779827305718",
   developer_contact_message: "Hi developer, I need help with this digital business card.",
+  developer_contact_style: "button",
   developer_contact_button_color: "#25d366",
   developer_contact_button_text_color: "#ffffff",
+  referral_offer_title: "Special Referral Offer",
+  referral_offer_description: "You opened this from a shared link. Show this offer to the business and ask for your referral reward.",
+  referral_offer_button_label: "Claim on WhatsApp",
+  referral_offer_button_url: "",
+  referral_offer_image_url: "",
+  referral_offer_background_color: "#ffffff",
+  referral_offer_text_color: "#17211f",
+  offer_popup_background_color: "#ffffff",
+  offer_popup_text_color: "#52605c",
+  offer_popup_heading_color: "",
+  offer_popup_kicker_color: "",
+  offer_countdown_background_color: "",
+  offer_countdown_label_color: "#ffffff",
+  offer_countdown_box_color: "#ffffff",
+  offer_countdown_number_color: "#17211f",
+  offer_countdown_unit_color: "#5e6b68",
+  company_video_title: "Company Video",
+  company_video_description: "",
+  company_video_source_mode: "uploaded",
+  company_video_url: "",
+  company_video_uploaded_url: "",
+  company_video_external_url: "",
+  company_video_poster_url: "",
   admin_module_locks: {},
 };
 
@@ -173,6 +213,7 @@ const sectionControls = [
   { id: "add_contact", label: "Add Contact Button", setting: "show_add_contact_button" },
   { id: "uploaded_card", label: "Uploaded Visiting Card Image", setting: "show_uploaded_card_section" },
   { id: "business_hours", label: "Business Hours", setting: "show_business_hours_section" },
+  { id: "company_video", label: "Company Video", setting: "show_company_video_section" },
   { id: "primary_cta", label: "Primary CTA Button", setting: "show_primary_cta_section" },
   { id: "location", label: "Location / Map", setting: "show_location_section" },
   { id: "visitor_count", label: "Visitor Counter", setting: "show_visitor_count" },
@@ -284,6 +325,7 @@ function humanizeKey(key) {
 
 function getSettingSearchSection(key) {
   if (key.includes("developer_contact")) return "developer-centre";
+  if (key.includes("referral") || key.includes("company_video")) return "content";
   if (key.includes("chat")) return "chatbot";
   if (key.includes("lead") || key.includes("analytics") || key.includes("visitor") || key.includes("countdown")) return "analytics-dashboard";
   if (key.includes("followup") || key.includes("follow_up") || key.includes("auto_followup")) return "follow-up";
@@ -321,10 +363,10 @@ const defaultChatbotSettings = {
   whatsapp_number: "",
   accent_color: "#03736e",
   heading_color: "#03736e",
-  ai_enabled: false,
-  ai_api_url: "",
+  ai_enabled: true,
+  ai_api_url: "http://localhost:10000",
   ai_system_prompt:
-    "You are a helpful sales assistant. Answer naturally using only the business knowledge provided. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.",
+    "You are a warm human-like business assistant. Answer naturally using only the business knowledge provided. Keep replies short, friendly, and useful. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.",
 };
 
 function Login({ onLogin }) {
@@ -390,6 +432,36 @@ function Login({ onLogin }) {
   );
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="login-page">
+          <section className="login-card">
+            <p className="eyebrow">Admin Error</p>
+            <h1>Dashboard could not open</h1>
+            <p className="form-message">{this.state.error.message}</p>
+            <button className="primary-button" onClick={() => window.location.reload()} type="button">
+              Reload Admin
+            </button>
+          </section>
+        </main>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function Field({ label, value, onChange, type = "text", textarea = false }) {
   return (
     <label>
@@ -412,7 +484,13 @@ function ToggleField({ label, checked, onChange }) {
   );
 }
 
-function UploadField({ label, path, onUploaded, accept, keepLast = 5 }) {
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes)) return "";
+  const megabytes = bytes / 1024 / 1024;
+  return `${megabytes.toFixed(megabytes >= 10 ? 0 : 1)} MB`;
+}
+
+function UploadField({ label, path, onUploaded, accept, keepLast = 5, maxSizeMb }) {
   const [busy, setBusy] = useState(false);
 
   async function cleanupOldFiles(currentFilePath) {
@@ -446,6 +524,10 @@ function UploadField({ label, path, onUploaded, accept, keepLast = 5 }) {
 
   async function upload(file) {
     if (!file) return;
+    if (maxSizeMb && file.size > maxSizeMb * 1024 * 1024) {
+      alert(`This file is ${formatFileSize(file.size)}. Please upload a file up to ${maxSizeMb} MB.`);
+      return;
+    }
     setBusy(true);
     const safeName = file.name.replace(/[^a-z0-9.\-_]/gi, "-").toLowerCase();
     const filePath = `${path}/${Date.now()}-${safeName}`;
@@ -527,6 +609,12 @@ function Dashboard() {
     button_label: "",
     button_url: "",
     layout: "card",
+    background_color: "#ffffff",
+    title_color: "#17211f",
+    text_color: "#52605c",
+    border_color: "#d9e7e4",
+    button_background_color: "#03736e",
+    button_text_color: "#ffffff",
     active: true,
     sort_order: 100,
   });
@@ -772,47 +860,71 @@ function Dashboard() {
 
   async function loadAll() {
     setDashboardLoading(true);
-    const [
-      settingsResult,
-      offersResult,
-      linksResult,
-      sectionsResult,
-      analyticsResult,
-      chatbotSettingsResult,
-      chatbotFaqsResult,
-      chatbotProductsResult,
-      chatbotOffersResult,
-      chatbotLeadsResult,
-      reviewDetailLeadsResult,
-      analyticsEventsResult,
-    ] = await Promise.all([
-      supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("offers").select("*").order("created_at", { ascending: false }),
-      supabase.from("custom_links").select("*").order("sort_order", { ascending: true }),
-      supabase.from("custom_sections").select("*").order("sort_order", { ascending: true }),
-      supabase.from("analytics").select("visitor_count").eq("id", 1).maybeSingle(),
-      supabase.from("chatbot_settings").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("chatbot_faqs").select("*").order("sort_order", { ascending: true }),
-      supabase.from("chatbot_products").select("*").order("sort_order", { ascending: true }),
-      supabase.from("chatbot_offers").select("*").order("sort_order", { ascending: true }),
-      supabase.from("chatbot_leads").select("*").order("created_at", { ascending: false }),
-      supabase.from("review_detail_leads").select("*").order("created_at", { ascending: false }),
-      supabase.from("analytics_events").select("*").order("created_at", { ascending: false }).limit(500),
-    ]);
+    try {
+      const [
+        settingsResult,
+        offersResult,
+        linksResult,
+        sectionsResult,
+        analyticsResult,
+        chatbotSettingsResult,
+        chatbotFaqsResult,
+        chatbotProductsResult,
+        chatbotOffersResult,
+        chatbotLeadsResult,
+        reviewDetailLeadsResult,
+        analyticsEventsResult,
+      ] = await Promise.all([
+        supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+        supabase.from("offers").select("*").order("created_at", { ascending: false }),
+        supabase.from("custom_links").select("*").order("sort_order", { ascending: true }),
+        supabase.from("custom_sections").select("*").order("sort_order", { ascending: true }),
+        supabase.from("analytics").select("visitor_count").eq("id", 1).maybeSingle(),
+        supabase.from("chatbot_settings").select("*").eq("id", 1).maybeSingle(),
+        supabase.from("chatbot_faqs").select("*").order("sort_order", { ascending: true }),
+        supabase.from("chatbot_products").select("*").order("sort_order", { ascending: true }),
+        supabase.from("chatbot_offers").select("*").order("sort_order", { ascending: true }),
+        supabase.from("chatbot_leads").select("*").order("created_at", { ascending: false }),
+        supabase.from("review_detail_leads").select("*").order("created_at", { ascending: false }),
+        supabase.from("analytics_events").select("*").order("created_at", { ascending: false }).limit(500),
+      ]);
 
-    if (settingsResult.data) setSettings({ ...defaultSettings, ...settingsResult.data });
-    if (offersResult.data) setOffers(offersResult.data);
-    if (linksResult.data) setCustomLinks(linksResult.data);
-    if (sectionsResult.data) setCustomSections(sectionsResult.data);
-    if (analyticsResult.data) setAnalytics(analyticsResult.data.visitor_count || 0);
-    if (chatbotSettingsResult.data) setChatbotSettings({ ...defaultChatbotSettings, ...chatbotSettingsResult.data });
-    if (chatbotFaqsResult.data) setChatbotFaqs(chatbotFaqsResult.data);
-    if (chatbotProductsResult.data) setChatbotProducts(chatbotProductsResult.data);
-    if (chatbotOffersResult.data) setChatbotOffers(chatbotOffersResult.data);
-    if (chatbotLeadsResult.data) setChatbotLeads(chatbotLeadsResult.data);
-    if (reviewDetailLeadsResult.data) setReviewDetailLeads(reviewDetailLeadsResult.data);
-    if (analyticsEventsResult.data) setAnalyticsEvents(analyticsEventsResult.data);
-    setDashboardLoading(false);
+      const loadErrors = [
+        settingsResult.error,
+        offersResult.error,
+        linksResult.error,
+        sectionsResult.error,
+        analyticsResult.error,
+        chatbotSettingsResult.error,
+        chatbotFaqsResult.error,
+        chatbotProductsResult.error,
+        chatbotOffersResult.error,
+        chatbotLeadsResult.error,
+        reviewDetailLeadsResult.error,
+        analyticsEventsResult.error,
+      ].filter(Boolean);
+
+      if (settingsResult.data) setSettings({ ...defaultSettings, ...settingsResult.data });
+      if (offersResult.data) setOffers(offersResult.data);
+      if (linksResult.data) setCustomLinks(linksResult.data);
+      if (sectionsResult.data) setCustomSections(sectionsResult.data);
+      if (analyticsResult.data) setAnalytics(analyticsResult.data.visitor_count || 0);
+      if (chatbotSettingsResult.data) setChatbotSettings({ ...defaultChatbotSettings, ...chatbotSettingsResult.data });
+      if (chatbotFaqsResult.data) setChatbotFaqs(chatbotFaqsResult.data);
+      if (chatbotProductsResult.data) setChatbotProducts(chatbotProductsResult.data);
+      if (chatbotOffersResult.data) setChatbotOffers(chatbotOffersResult.data);
+      if (chatbotLeadsResult.data) setChatbotLeads(chatbotLeadsResult.data);
+      if (reviewDetailLeadsResult.data) setReviewDetailLeads(reviewDetailLeadsResult.data);
+      if (analyticsEventsResult.data) setAnalyticsEvents(analyticsEventsResult.data);
+
+      if (loadErrors.length > 0) {
+        setStatus(`Dashboard loaded with database warning: ${loadErrors[0].message}`);
+      }
+    } catch (error) {
+      setStatus(`Dashboard load warning: ${error.message}. Some data may be missing.`);
+    } finally {
+      setDashboardLoading(false);
+    }
   }
 
   async function loadLeadTables() {
@@ -1160,6 +1272,12 @@ function Dashboard() {
       button_label: "",
       button_url: "",
       layout: "card",
+      background_color: "#ffffff",
+      title_color: "#17211f",
+      text_color: "#52605c",
+      border_color: "#d9e7e4",
+      button_background_color: "#03736e",
+      button_text_color: "#ffffff",
       active: true,
       sort_order: 100,
     });
@@ -1714,6 +1832,13 @@ function Dashboard() {
             value={settings.developer_contact_message}
             onChange={(value) => updateSetting("developer_contact_message", value)}
           />
+          <label>
+            Display Style
+            <select value={settings.developer_contact_style || "button"} onChange={(event) => updateSetting("developer_contact_style", event.target.value)}>
+              <option value="button">Button background</option>
+              <option value="text">Text only, no background</option>
+            </select>
+          </label>
           <Field
             label="Button Background"
             type="color"
@@ -1747,6 +1872,14 @@ function Dashboard() {
           <Field label="Primary Brand Color" type="color" value={settings.primary_color} onChange={(value) => updateSetting("primary_color", value)} />
           <Field label="Review Text" value={settings.review_text} onChange={(value) => updateSetting("review_text", value)} />
           <Field label="Star Rating" type="number" value={settings.star_rating} onChange={(value) => updateSetting("star_rating", value)} />
+          <label>
+            Logo Frame Shape
+            <select value={settings.logo_shape || "circle"} onChange={(event) => updateSetting("logo_shape", event.target.value)}>
+              <option value="circle">Circle</option>
+              <option value="rounded_square">Rounded Square</option>
+              <option value="square">Square</option>
+            </select>
+          </label>
           <ToggleField label="Show Logo" checked={settings.show_logo} onChange={(value) => updateSetting("show_logo", value)} />
         </div>
       </section>
@@ -1767,6 +1900,12 @@ function Dashboard() {
           <Field label="Owner Name" value={settings.owner_name} onChange={(value) => updateSetting("owner_name", value)} />
           <Field label="Owner Title / Role" value={settings.owner_title} onChange={(value) => updateSetting("owner_title", value)} />
           <Field label="Owner Short Bio" textarea value={settings.owner_bio} onChange={(value) => updateSetting("owner_bio", value)} />
+          <Field label="Card Background" type="color" value={settings.owner_card_background_color || "#ffffff"} onChange={(value) => updateSetting("owner_card_background_color", value)} />
+          <Field label="Card Border Color" type="color" value={settings.owner_card_border_color || settings.accent_color || "#03736e"} onChange={(value) => updateSetting("owner_card_border_color", value)} />
+          <Field label="Label Color" type="color" value={settings.owner_card_label_color || settings.accent_color || "#03736e"} onChange={(value) => updateSetting("owner_card_label_color", value)} />
+          <Field label="Name Color" type="color" value={settings.owner_card_name_color || settings.heading_color || "#03736e"} onChange={(value) => updateSetting("owner_card_name_color", value)} />
+          <Field label="Title Color" type="color" value={settings.owner_card_title_color || "#17211f"} onChange={(value) => updateSetting("owner_card_title_color", value)} />
+          <Field label="Bio Text Color" type="color" value={settings.owner_card_text_color || settings.body_text_color || "#52605c"} onChange={(value) => updateSetting("owner_card_text_color", value)} />
           <ToggleField label="Show Owner Visiting Card" checked={settings.show_visiting_card_section} onChange={(value) => updateSetting("show_visiting_card_section", value)} />
         </div>
       </section>
@@ -2008,6 +2147,11 @@ function Dashboard() {
           <Field label="Instagram URL" value={settings.instagram_url} onChange={(value) => updateSetting("instagram_url", value)} />
           <Field label="TikTok URL" value={settings.tiktok_url} onChange={(value) => updateSetting("tiktok_url", value)} />
           <Field label="Website URL" value={settings.website_url} onChange={(value) => updateSetting("website_url", value)} />
+          <ToggleField label="Show WhatsApp" checked={settings.show_whatsapp_social} onChange={(value) => updateSetting("show_whatsapp_social", value)} />
+          <ToggleField label="Show Facebook" checked={settings.show_facebook_social} onChange={(value) => updateSetting("show_facebook_social", value)} />
+          <ToggleField label="Show Instagram" checked={settings.show_instagram_social} onChange={(value) => updateSetting("show_instagram_social", value)} />
+          <ToggleField label="Show TikTok" checked={settings.show_tiktok_social} onChange={(value) => updateSetting("show_tiktok_social", value)} />
+          <ToggleField label="Show Website" checked={settings.show_website_social} onChange={(value) => updateSetting("show_website_social", value)} />
         </div>
         <div className="icon-upload-grid">
           <div className="icon-upload-card">
@@ -2114,6 +2258,17 @@ function Dashboard() {
             </button>
           </div>
         </div>
+        <div className="form-grid color-grid">
+          <Field label="Popup Background" type="color" value={settings.offer_popup_background_color || "#ffffff"} onChange={(value) => updateSetting("offer_popup_background_color", value)} />
+          <Field label="Popup Text" type="color" value={settings.offer_popup_text_color || settings.body_text_color || "#52605c"} onChange={(value) => updateSetting("offer_popup_text_color", value)} />
+          <Field label="Popup Heading" type="color" value={settings.offer_popup_heading_color || settings.heading_color || "#03736e"} onChange={(value) => updateSetting("offer_popup_heading_color", value)} />
+          <Field label="Small Label Color" type="color" value={settings.offer_popup_kicker_color || settings.accent_color || "#03736e"} onChange={(value) => updateSetting("offer_popup_kicker_color", value)} />
+          <Field label="Countdown Background" type="color" value={settings.offer_countdown_background_color || settings.accent_color || "#03736e"} onChange={(value) => updateSetting("offer_countdown_background_color", value)} />
+          <Field label="Countdown Label" type="color" value={settings.offer_countdown_label_color || "#ffffff"} onChange={(value) => updateSetting("offer_countdown_label_color", value)} />
+          <Field label="Countdown Box" type="color" value={settings.offer_countdown_box_color || "#ffffff"} onChange={(value) => updateSetting("offer_countdown_box_color", value)} />
+          <Field label="Countdown Number" type="color" value={settings.offer_countdown_number_color || "#17211f"} onChange={(value) => updateSetting("offer_countdown_number_color", value)} />
+          <Field label="Countdown Unit" type="color" value={settings.offer_countdown_unit_color || "#5e6b68"} onChange={(value) => updateSetting("offer_countdown_unit_color", value)} />
+        </div>
         <div className="offer-editor">
           <Field label="Title" value={newOffer.title} onChange={(value) => setNewOffer((offer) => ({ ...offer, title: value }))} />
           <Field label="Description" value={newOffer.description} onChange={(value) => setNewOffer((offer) => ({ ...offer, description: value }))} />
@@ -2173,6 +2328,78 @@ function Dashboard() {
 
       <section className="panel dashboard-section" hidden={activeSection !== "content"}>
         <div className="panel-heading">
+          <h2><Share2 size={20} /> Referral Offer</h2>
+          <button className="primary-button" onClick={saveSettings} type="button">
+            <Save size={18} />
+            Save Referral
+          </button>
+        </div>
+        <p className="form-message">
+          When a visitor shares the page, the shared link includes a referral code. Anyone opening that link can see this special referral offer.
+        </p>
+        <div className="form-grid color-grid">
+          <ToggleField label="Enable Referral Offer" checked={settings.show_referral_offer} onChange={(value) => updateSetting("show_referral_offer", value)} />
+          <Field label="Offer Title" value={settings.referral_offer_title} onChange={(value) => updateSetting("referral_offer_title", value)} />
+          <Field label="Offer Description" textarea value={settings.referral_offer_description} onChange={(value) => updateSetting("referral_offer_description", value)} />
+          <Field label="Button Text" value={settings.referral_offer_button_label} onChange={(value) => updateSetting("referral_offer_button_label", value)} />
+          <Field label="Button Link" value={settings.referral_offer_button_url} onChange={(value) => updateSetting("referral_offer_button_url", value)} />
+          <Field label="Popup Background" type="color" value={settings.referral_offer_background_color} onChange={(value) => updateSetting("referral_offer_background_color", value)} />
+          <Field label="Popup Text" type="color" value={settings.referral_offer_text_color} onChange={(value) => updateSetting("referral_offer_text_color", value)} />
+          <div className="logo-preview card-preview">
+            {settings.referral_offer_image_url ? <img src={settings.referral_offer_image_url} alt="" /> : <ImagePlus size={34} />}
+            <UploadField label="Upload Referral Image" path="referral-offers" accept="image/*" onUploaded={(url) => updateSetting("referral_offer_image_url", url)} />
+            {settings.referral_offer_image_url && (
+              <button className="danger-text-button" onClick={() => updateSetting("referral_offer_image_url", "")} type="button">
+                Remove Image
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel dashboard-section" hidden={activeSection !== "content"}>
+        <div className="panel-heading">
+          <h2><Video size={20} /> Company Video Box</h2>
+          <button className="primary-button" onClick={saveSettings} type="button">
+            <Save size={18} />
+            Save Video
+          </button>
+        </div>
+        <div className="form-grid">
+          <ToggleField label="Show Company Video" checked={settings.show_company_video_section} onChange={(value) => updateSetting("show_company_video_section", value)} />
+          <Field label="Video Title" value={settings.company_video_title} onChange={(value) => updateSetting("company_video_title", value)} />
+          <Field label="Video Description" textarea value={settings.company_video_description} onChange={(value) => updateSetting("company_video_description", value)} />
+          <label>
+            Public Video Source
+            <select value={settings.company_video_source_mode || "uploaded"} onChange={(event) => updateSetting("company_video_source_mode", event.target.value)}>
+              <option value="uploaded">Uploaded video</option>
+              <option value="url">URL / YouTube link</option>
+            </select>
+          </label>
+          <Field label="URL / YouTube Video Link" value={settings.company_video_external_url || ""} onChange={(value) => updateSetting("company_video_external_url", value)} />
+          <div className="logo-preview card-preview">
+            {settings.company_video_uploaded_url || settings.company_video_url ? <video src={settings.company_video_uploaded_url || settings.company_video_url} controls /> : <Video size={34} />}
+            <UploadField label="Upload Company Video" path="company-videos" accept="video/*" onUploaded={(url) => { updateSetting("company_video_uploaded_url", url); updateSetting("company_video_url", url); }} keepLast={2} maxSizeMb={200} />
+            {(settings.company_video_uploaded_url || settings.company_video_url) && (
+              <button className="danger-text-button" onClick={() => { updateSetting("company_video_uploaded_url", ""); updateSetting("company_video_url", ""); }} type="button">
+                Remove Uploaded Video
+              </button>
+            )}
+          </div>
+          <div className="logo-preview card-preview">
+            {settings.company_video_poster_url ? <img src={settings.company_video_poster_url} alt="" /> : <ImagePlus size={34} />}
+            <UploadField label="Upload Video Poster" path="company-video-posters" accept="image/*" onUploaded={(url) => updateSetting("company_video_poster_url", url)} />
+            {settings.company_video_poster_url && (
+              <button className="danger-text-button" onClick={() => updateSetting("company_video_poster_url", "")} type="button">
+                Remove Poster
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel dashboard-section" hidden={activeSection !== "content"}>
+        <div className="panel-heading">
           <h2><ImagePlus size={20} /> Custom Text / Image Blocks</h2>
           <div className="panel-actions">
             <button className="danger-text-button" onClick={() => resetTableData({ table: "custom_sections", label: "custom blocks", onReset: () => setCustomSections([]) })} type="button">Reset Blocks</button>
@@ -2185,7 +2412,15 @@ function Dashboard() {
         <div className="section-editor">
           <Field label="Title" value={newSection.title} onChange={(value) => setNewSection((section) => ({ ...section, title: value }))} />
           <Field label="Text" value={newSection.body} onChange={(value) => setNewSection((section) => ({ ...section, body: value }))} />
-          <UploadField label="Upload Block Image" path="sections" accept="image/*" onUploaded={(url) => setNewSection((section) => ({ ...section, image_url: url }))} />
+          <div className="section-image-control compact">
+            {newSection.image_url ? <img src={newSection.image_url} alt="" /> : <span>No image</span>}
+            <UploadField label={newSection.image_url ? "Replace Image" : "Upload Block Image"} path="sections" accept="image/*" onUploaded={(url) => setNewSection((section) => ({ ...section, image_url: url }))} />
+            {newSection.image_url && (
+              <button className="danger-text-button" onClick={() => setNewSection((section) => ({ ...section, image_url: "" }))} type="button">
+                Remove Image
+              </button>
+            )}
+          </div>
           <Field label="Button Label" value={newSection.button_label} onChange={(value) => setNewSection((section) => ({ ...section, button_label: value }))} />
           <Field label="Button URL" value={newSection.button_url} onChange={(value) => setNewSection((section) => ({ ...section, button_url: value }))} />
           <label>
@@ -2195,6 +2430,12 @@ function Dashboard() {
               <option value="inline">Small Inline</option>
             </select>
           </label>
+          <Field label="Block BG" type="color" value={newSection.background_color || "#ffffff"} onChange={(value) => setNewSection((section) => ({ ...section, background_color: value }))} />
+          <Field label="Title Color" type="color" value={newSection.title_color || "#17211f"} onChange={(value) => setNewSection((section) => ({ ...section, title_color: value }))} />
+          <Field label="Text Color" type="color" value={newSection.text_color || "#52605c"} onChange={(value) => setNewSection((section) => ({ ...section, text_color: value }))} />
+          <Field label="Border Color" type="color" value={newSection.border_color || "#d9e7e4"} onChange={(value) => setNewSection((section) => ({ ...section, border_color: value }))} />
+          <Field label="Button BG" type="color" value={newSection.button_background_color || "#03736e"} onChange={(value) => setNewSection((section) => ({ ...section, button_background_color: value }))} />
+          <Field label="Button Text" type="color" value={newSection.button_text_color || "#ffffff"} onChange={(value) => setNewSection((section) => ({ ...section, button_text_color: value }))} />
           <Field label="Sort" type="number" value={newSection.sort_order} onChange={(value) => setNewSection((section) => ({ ...section, sort_order: Number(value) }))} />
           <label className="toggle-label">
             <input
@@ -2209,22 +2450,43 @@ function Dashboard() {
         <div className="section-list">
           {customSections.map((section) => (
             <article className="section-row" key={section.id}>
-              <input value={section.title || ""} onChange={(event) => updateSection(section.id, { title: event.target.value })} />
-              <textarea value={section.body || ""} onChange={(event) => updateSection(section.id, { body: event.target.value })} rows={2} />
-              <input value={section.button_label || ""} onChange={(event) => updateSection(section.id, { button_label: event.target.value })} placeholder="Button label" />
-              <input value={section.button_url || ""} onChange={(event) => updateSection(section.id, { button_url: event.target.value })} placeholder="Button URL" />
-              <select value={section.layout || "card"} onChange={(event) => updateSection(section.id, { layout: event.target.value })}>
-                <option value="card">Full Card</option>
-                <option value="inline">Small Inline</option>
-              </select>
-              <input type="number" value={section.sort_order || 0} onChange={(event) => updateSection(section.id, { sort_order: Number(event.target.value) })} />
-              <label className="toggle-label">
-                <input type="checkbox" checked={section.active} onChange={(event) => updateSection(section.id, { active: event.target.checked })} />
-                Active
-              </label>
-              <button className="danger-button" onClick={() => deleteSection(section.id)} type="button" aria-label="Delete section">
-                <Trash2 size={18} />
-              </button>
+              <div className="section-image-control">
+                {section.image_url ? <img src={section.image_url} alt="" /> : <span>No image</span>}
+                <UploadField label={section.image_url ? "Replace Image" : "Upload Image"} path="sections" accept="image/*" onUploaded={(url) => updateSection(section.id, { image_url: url })} />
+                {section.image_url && (
+                  <button className="danger-text-button" onClick={() => updateSection(section.id, { image_url: "" })} type="button">
+                    Remove Image
+                  </button>
+                )}
+              </div>
+              <div className="section-fields">
+                <input value={section.title || ""} onChange={(event) => updateSection(section.id, { title: event.target.value })} placeholder="Title" />
+                <textarea value={section.body || ""} onChange={(event) => updateSection(section.id, { body: event.target.value })} rows={3} placeholder="Description" />
+                <input value={section.button_label || ""} onChange={(event) => updateSection(section.id, { button_label: event.target.value })} placeholder="Button label" />
+                <input value={section.button_url || ""} onChange={(event) => updateSection(section.id, { button_url: event.target.value })} placeholder="Button URL" />
+              </div>
+              <div className="section-color-grid">
+                <label>BG<input type="color" value={section.background_color || "#ffffff"} onChange={(event) => updateSection(section.id, { background_color: event.target.value })} /></label>
+                <label>Title<input type="color" value={section.title_color || "#17211f"} onChange={(event) => updateSection(section.id, { title_color: event.target.value })} /></label>
+                <label>Text<input type="color" value={section.text_color || "#52605c"} onChange={(event) => updateSection(section.id, { text_color: event.target.value })} /></label>
+                <label>Border<input type="color" value={section.border_color || "#d9e7e4"} onChange={(event) => updateSection(section.id, { border_color: event.target.value })} /></label>
+                <label>Btn BG<input type="color" value={section.button_background_color || "#03736e"} onChange={(event) => updateSection(section.id, { button_background_color: event.target.value })} /></label>
+                <label>Btn Text<input type="color" value={section.button_text_color || "#ffffff"} onChange={(event) => updateSection(section.id, { button_text_color: event.target.value })} /></label>
+              </div>
+              <div className="section-controls">
+                <select value={section.layout || "card"} onChange={(event) => updateSection(section.id, { layout: event.target.value })}>
+                  <option value="card">Full Card</option>
+                  <option value="inline">Small Inline</option>
+                </select>
+                <input type="number" value={section.sort_order || 0} onChange={(event) => updateSection(section.id, { sort_order: Number(event.target.value) })} />
+                <label className="toggle-label">
+                  <input type="checkbox" checked={section.active} onChange={(event) => updateSection(section.id, { active: event.target.checked })} />
+                  Active
+                </label>
+                <button className="danger-button" onClick={() => deleteSection(section.id)} type="button" aria-label="Delete section">
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -2643,4 +2905,8 @@ function App() {
   return session ? <Dashboard /> : <Login onLogin={() => supabase.auth.getSession().then(({ data }) => setSession(data.session))} />;
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>,
+);

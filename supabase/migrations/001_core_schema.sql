@@ -282,9 +282,12 @@ using (public.is_admin(auth.uid()));
 
 grant execute on function public.increment_visitor_count() to anon, authenticated;
 
-insert into storage.buckets (id, name, public)
-values ('site-assets', 'site-assets', true)
-on conflict (id) do update set public = excluded.public;
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('site-assets', 'site-assets', true, 209715200)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit;
 
 drop policy if exists "Public can read site assets" on storage.objects;
 create policy "Public can read site assets"
@@ -508,4 +511,3 @@ grant execute on function public.verify_admin_credentials(text, text) to anon, a
 
 -- Run this after changing the email/password values:
 -- select public.set_admin_credentials('owner@example.com', 'change-this-password');
-

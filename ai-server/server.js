@@ -1,8 +1,34 @@
 const http = require("http");
 
+loadLocalEnv();
+
 const PORT = process.env.PORT || 10000;
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2:1b";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+const AI_PROVIDER = (process.env.AI_PROVIDER || (GEMINI_API_KEY ? "gemini" : "ollama")).toLowerCase();
+
+function loadLocalEnv() {
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const envPath = path.join(__dirname, ".env");
+    if (!fs.existsSync(envPath)) return;
+    const envText = fs.readFileSync(envPath, "utf8");
+    envText.split(/\r?\n/).forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) return;
+      const separator = trimmed.indexOf("=");
+      if (separator === -1) return;
+      const key = trimmed.slice(0, separator).trim();
+      const value = trimmed.slice(separator + 1).trim().replace(/^["']|["']$/g, "");
+      if (key && process.env[key] === undefined) process.env[key] = value;
+    });
+  } catch {
+    // Environment loading is optional. Hosting providers should use real env vars.
+  }
+}
 
 function send(res, status, data) {
   const body = JSON.stringify(data);
@@ -135,6 +161,44 @@ async function askOllama(payload) {
   return data.response?.trim() || null;
 }
 
+async function askGemini(payload) {
+  if (!GEMINI_API_KEY) return null;
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: buildPrompt(payload) }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.55,
+        topP: 0.9,
+        maxOutputTokens: 180,
+      },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      ],
+    }),
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("").trim();
+  return text || null;
+}
+
+async function askAi(payload) {
+  if (AI_PROVIDER === "gemini") {
+    return (await askGemini(payload).catch(() => null)) || (await askOllama(payload).catch(() => null));
+  }
+  return (await askOllama(payload).catch(() => null)) || (await askGemini(payload).catch(() => null));
+}
+
 function scoreLead(message) {
   if (hasAny(message, ["price", "quote", "book", "buy", "urgent", "today", "call"])) return "hot";
   if (hasAny(message, ["service", "support", "info", "offer", "interested"])) return "warm";
@@ -153,14 +217,21 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && req.url === "/health") {
-    send(res, 200, { ok: true, ollama: Boolean(OLLAMA_BASE_URL), model: OLLAMA_MODEL });
+    send(res, 200, {
+      ok: true,
+      provider: AI_PROVIDER,
+      gemini: Boolean(GEMINI_API_KEY),
+      geminiModel: GEMINI_MODEL,
+      ollama: Boolean(OLLAMA_BASE_URL),
+      ollamaModel: OLLAMA_MODEL,
+    });
     return;
   }
 
   if (req.method === "POST" && req.url === "/chat") {
     try {
       const payload = await readBody(req);
-      const aiReply = await askOllama(payload).catch(() => null);
+      const aiReply = await askAi(payload).catch(() => null);
       const reply = aiReply || fallbackReply(payload);
       send(res, 200, {
         reply,

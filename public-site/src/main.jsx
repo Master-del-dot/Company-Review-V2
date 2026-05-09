@@ -51,6 +51,7 @@ import "./styles.css";
 
 const fallbackSettings = {
   logo_url: "",
+  logo_shape: "circle",
   business_name: "restroelaichi",
   tagline: "Multi Cuisine Food | Cafe | Bar | Music | Karaoke",
   primary_color: "#03736e",
@@ -75,6 +76,11 @@ const fallbackSettings = {
   instagram_icon_url: "",
   tiktok_icon_url: "",
   website_icon_url: "",
+  show_whatsapp_social: true,
+  show_facebook_social: true,
+  show_instagram_social: true,
+  show_tiktok_social: true,
+  show_website_social: true,
   address_text: "Shivachowk, Lalitpur 44700",
   google_maps_url: "",
   map_embed_code: "",
@@ -87,6 +93,12 @@ const fallbackSettings = {
   owner_title: "",
   owner_photo_url: "",
   owner_bio: "",
+  owner_card_background_color: "#ffffff",
+  owner_card_border_color: "",
+  owner_card_label_color: "",
+  owner_card_name_color: "",
+  owner_card_title_color: "#17211f",
+  owner_card_text_color: "",
   visiting_card_image_url: "",
   visiting_card_display_mode: "section",
   show_uploaded_card_section: false,
@@ -110,6 +122,8 @@ const fallbackSettings = {
   show_offer_popup: true,
   show_chatbot_section: true,
   show_developer_contact_section: true,
+  show_referral_offer: true,
+  show_company_video_section: false,
   section_order: [
     "identity",
     "quick_contact",
@@ -121,6 +135,7 @@ const fallbackSettings = {
     "add_contact",
     "uploaded_card",
     "business_hours",
+    "company_video",
     "primary_cta",
     "location",
     "visitor_count",
@@ -172,8 +187,32 @@ const fallbackSettings = {
   developer_contact_label: "Contact Developer",
   developer_contact_whatsapp_number: "+9779827305718",
   developer_contact_message: "Hi developer, I need help with this digital business card.",
+  developer_contact_style: "button",
   developer_contact_button_color: "#25d366",
   developer_contact_button_text_color: "#ffffff",
+  referral_offer_title: "Special Referral Offer",
+  referral_offer_description: "You opened this from a shared link. Show this offer to the business and ask for your referral reward.",
+  referral_offer_button_label: "Claim on WhatsApp",
+  referral_offer_button_url: "",
+  referral_offer_image_url: "",
+  referral_offer_background_color: "#ffffff",
+  referral_offer_text_color: "#17211f",
+  offer_popup_background_color: "#ffffff",
+  offer_popup_text_color: "#52605c",
+  offer_popup_heading_color: "",
+  offer_popup_kicker_color: "",
+  offer_countdown_background_color: "",
+  offer_countdown_label_color: "#ffffff",
+  offer_countdown_box_color: "#ffffff",
+  offer_countdown_number_color: "#17211f",
+  offer_countdown_unit_color: "#5e6b68",
+  company_video_title: "Company Video",
+  company_video_description: "",
+  company_video_source_mode: "uploaded",
+  company_video_url: "",
+  company_video_uploaded_url: "",
+  company_video_external_url: "",
+  company_video_poster_url: "",
 };
 
 const orderedSectionDefaults = fallbackSettings.section_order;
@@ -192,6 +231,50 @@ function normalizeUrl(value) {
     return value;
   }
   return `https://${value}`;
+}
+
+function getYouTubeEmbedUrl(value) {
+  const rawUrl = String(value || "").trim();
+  if (!rawUrl) return "";
+
+  try {
+    const url = new URL(normalizeUrl(rawUrl));
+    const host = url.hostname.replace(/^www\./, "").toLowerCase();
+    let videoId = "";
+
+    if (host === "youtu.be") {
+      videoId = url.pathname.split("/").filter(Boolean)[0] || "";
+    } else if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (url.pathname === "/watch") {
+        videoId = url.searchParams.get("v") || "";
+      } else if (["embed", "shorts", "live"].includes(parts[0])) {
+        videoId = parts[1] || "";
+      }
+    }
+
+    if (!/^[a-zA-Z0-9_-]{6,}$/.test(videoId)) return "";
+
+    const start = url.searchParams.get("start") || url.searchParams.get("t") || "";
+    const startSeconds = parseYouTubeStartSeconds(start);
+    const params = new URLSearchParams({ rel: "0" });
+    if (startSeconds > 0) params.set("start", String(startSeconds));
+
+    return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+  } catch {
+    return "";
+  }
+}
+
+function parseYouTubeStartSeconds(value) {
+  const time = String(value || "").trim().toLowerCase();
+  if (!time) return 0;
+  if (/^\d+$/.test(time)) return Number(time);
+
+  const hours = Number(time.match(/(\d+)h/)?.[1] || 0);
+  const minutes = Number(time.match(/(\d+)m/)?.[1] || 0);
+  const seconds = Number(time.match(/(\d+)s/)?.[1] || 0);
+  return hours * 3600 + minutes * 60 + seconds;
 }
 
 function buildWhatsAppUrl(number, message) {
@@ -363,10 +446,10 @@ const fallbackChatbot = {
     whatsapp_number: "",
     accent_color: "#03736e",
     heading_color: "#03736e",
-    ai_enabled: false,
-    ai_api_url: "",
+    ai_enabled: true,
+    ai_api_url: "http://localhost:10000",
     ai_system_prompt:
-      "You are a helpful sales assistant. Answer naturally using only the business knowledge provided. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.",
+      "You are a warm human-like business assistant. Answer naturally using only the business knowledge provided. Keep replies short, friendly, and useful. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.",
   },
   faqs: [
     {
@@ -465,6 +548,7 @@ function getLeadSource() {
     utm_source: params.get("utm_source") || "",
     utm_medium: params.get("utm_medium") || "",
     utm_campaign: params.get("utm_campaign") || "",
+    referral_id: params.get("ref") || "",
     referrer: document.referrer || "",
     page_url: window.location.href,
   };
@@ -741,10 +825,8 @@ function AutomationChat({ settings }) {
     addMessage(clean, "user");
     setQuickReplies([]);
     setTyping(true);
-    let response = buildResponse(clean);
-    if (response.intent === "inquiry") {
-      response = (await askAiBridge(clean)) || response;
-    }
+    const fallbackResponse = buildResponse(clean);
+    const response = (await askAiBridge(clean)) || fallbackResponse;
     setLastTag(response.tag);
 
     if (hasSupabaseConfig) {
@@ -902,6 +984,10 @@ function App() {
   const [shareOpen, setShareOpen] = useState(false);
   const [copyLabel, setCopyLabel] = useState(fallbackSettings.text_share_copy_button);
   const [offerPopupOpen, setOfferPopupOpen] = useState(false);
+  const [referralOfferOpen, setReferralOfferOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(new URLSearchParams(window.location.search).get("ref"));
+  });
   const [activeOfferIndex, setActiveOfferIndex] = useState(0);
   const [detailLead, setDetailLead] = useState({ name: "", phone: "", email: "", message: "" });
   const [detailExtraFields, setDetailExtraFields] = useState({});
@@ -1005,12 +1091,18 @@ function App() {
   const showOfferPopup = settings.show_offer_popup !== false;
   const showChatbot = settings.show_chatbot_section !== false;
   const showDeveloperContact = settings.show_developer_contact_section !== false && Boolean(settings.developer_contact_whatsapp_number);
+  const showReferralOffer = settings.show_referral_offer !== false && Boolean(leadSource.referral_id);
   const showUploadedCard =
     settings.show_uploaded_card_section !== false &&
     settings.visiting_card_display_mode !== "background" &&
     Boolean(settings.visiting_card_image_url);
   const showBusinessHours = settings.show_business_hours_section !== false && Boolean(settings.business_hours);
   const showPrimaryCta = settings.show_primary_cta_section !== false && Boolean(settings.primary_cta_label && settings.primary_cta_url);
+  const selectedCompanyVideoUrl =
+    settings.company_video_source_mode === "url"
+      ? settings.company_video_external_url || settings.company_video_url
+      : settings.company_video_uploaded_url || settings.company_video_url;
+  const showCompanyVideo = settings.show_company_video_section !== false && Boolean(selectedCompanyVideoUrl);
   const orderedSectionIds = normalizeSectionOrder(settings.section_order);
   const detailFormFields = normalizeDetailFormFields(settings.detail_form_fields);
   const pageBackgroundImage =
@@ -1019,35 +1111,42 @@ function App() {
       : settings.show_uploaded_card_section !== false && settings.visiting_card_display_mode === "background"
         ? settings.visiting_card_image_url
         : "";
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const baseShareUrl = typeof window !== "undefined" ? window.location.href.split("#")[0] : "";
+  const referralShareUrl = useMemo(() => {
+    if (!baseShareUrl) return "";
+    const url = new URL(baseShareUrl);
+    url.searchParams.set("ref", visitorId);
+    return url.toString();
+  }, [baseShareUrl, visitorId]);
+  const shareUrl = settings.show_referral_offer === false ? baseShareUrl : referralShareUrl;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareUrl)}`;
-  const shareLinks = [
+  const shareDisplayLinks = [
     {
-      href: whatsappHref,
+      href: settings.show_whatsapp_social === false ? "" : whatsappHref,
       label: "WhatsApp",
       imageUrl: settings.whatsapp_icon_url,
       icon: <MessageCircle size={22} />,
     },
     {
-      href: normalizeUrl(settings.facebook_url),
+      href: settings.show_facebook_social === false ? "" : normalizeUrl(settings.facebook_url),
       label: "Facebook",
       imageUrl: settings.facebook_icon_url,
       icon: <Facebook size={22} />,
     },
     {
-      href: normalizeUrl(settings.instagram_url),
+      href: settings.show_instagram_social === false ? "" : normalizeUrl(settings.instagram_url),
       label: "Instagram",
       imageUrl: settings.instagram_icon_url,
       icon: <Instagram size={22} />,
     },
     {
-      href: normalizeUrl(settings.tiktok_url),
+      href: settings.show_tiktok_social === false ? "" : normalizeUrl(settings.tiktok_url),
       label: "TikTok",
       imageUrl: settings.tiktok_icon_url,
       icon: <Music2 size={22} />,
     },
     {
-      href: normalizeUrl(settings.website_url),
+      href: settings.show_website_social === false ? "" : normalizeUrl(settings.website_url),
       label: "Website",
       imageUrl: settings.website_icon_url,
       icon: <Globe size={22} />,
@@ -1076,21 +1175,31 @@ function App() {
     settings.developer_contact_message,
   );
 
-  async function shareSite() {
-    trackEvent("share_open", "share");
+  async function shareSite({ openFallback = true } = {}) {
+    trackEvent("share_open", "share", { referral_url: settings.show_referral_offer !== false });
     if (navigator.share) {
-      await navigator.share({
-        title: settings.business_name || "Digital Business Card",
-        text: settings.tagline || "",
-        url: shareUrl,
-      });
+      try {
+        await navigator.share({
+          title: settings.business_name || "Digital Business Card",
+          text: settings.tagline || "",
+          url: shareUrl,
+        });
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") return;
+      }
+    }
+    if (openFallback) {
+      setShareOpen(true);
       return;
     }
-    setShareOpen(true);
+    await navigator.clipboard.writeText(shareUrl);
+    setCopyLabel(settings.text_share_copied_button || fallbackSettings.text_share_copied_button);
+    setTimeout(() => setCopyLabel(settings.text_share_copy_button || fallbackSettings.text_share_copy_button), 1400);
   }
 
   async function copyLink() {
-    trackEvent("share_copy", "share");
+    trackEvent("share_copy", "share", { referral_url: settings.show_referral_offer !== false });
     await navigator.clipboard.writeText(shareUrl);
     setCopyLabel(settings.text_share_copied_button || fallbackSettings.text_share_copied_button);
     setTimeout(() => setCopyLabel(settings.text_share_copy_button || fallbackSettings.text_share_copy_button), 1400);
@@ -1186,7 +1295,7 @@ function App() {
         return (
           <header className="identity" key={sectionId}>
             {settings.show_logo !== false && (
-              <div className="logo-ring">
+              <div className={`logo-ring ${settings.logo_shape === "square" ? "square" : settings.logo_shape === "rounded_square" ? "rounded-square" : "circle"}`}>
                 {settings.logo_url ? (
                   <img src={settings.logo_url} alt={`${settings.business_name} logo`} />
                 ) : (
@@ -1210,7 +1319,19 @@ function App() {
       case "owner_card":
         if (!showVisitingCard) return null;
         return (
-          <section className="owner-card" aria-label="Owner visiting card" key={sectionId}>
+          <section
+            className="owner-card"
+            aria-label="Owner visiting card"
+            key={sectionId}
+            style={{
+              "--owner-card-bg": settings.owner_card_background_color || fallbackSettings.owner_card_background_color,
+              "--owner-card-border": settings.owner_card_border_color || `color-mix(in srgb, var(--accent) 18%, transparent)`,
+              "--owner-card-label": settings.owner_card_label_color || "var(--accent)",
+              "--owner-card-name": settings.owner_card_name_color || "var(--heading)",
+              "--owner-card-title": settings.owner_card_title_color || fallbackSettings.owner_card_title_color,
+              "--owner-card-text": settings.owner_card_text_color || "var(--body-text)",
+            }}
+          >
             <div className="owner-photo">
               {settings.owner_photo_url ? (
                 <img src={settings.owner_photo_url} alt={`${settings.owner_name || settings.business_name} profile`} />
@@ -1323,11 +1444,11 @@ function App() {
         if (!showSocial) return null;
         return (
           <section className="socials" aria-label="Social media" key={sectionId}>
-            <SocialLink href={whatsappHref} label="WhatsApp" imageUrl={settings.whatsapp_icon_url} icon={<MessageCircle size={22} />} onClick={() => trackEvent("social_whatsapp_click", "click")} />
-            <SocialLink href={normalizeUrl(settings.facebook_url)} label="Facebook" imageUrl={settings.facebook_icon_url} icon={<Facebook size={22} />} onClick={() => trackEvent("social_facebook_click", "click")} />
-            <SocialLink href={normalizeUrl(settings.instagram_url)} label="Instagram" imageUrl={settings.instagram_icon_url} icon={<Instagram size={22} />} onClick={() => trackEvent("social_instagram_click", "click")} />
-            <SocialLink href={normalizeUrl(settings.tiktok_url)} label="TikTok" imageUrl={settings.tiktok_icon_url} icon={<Music2 size={22} />} onClick={() => trackEvent("social_tiktok_click", "click")} />
-            <SocialLink href={normalizeUrl(settings.website_url)} label="Website" imageUrl={settings.website_icon_url} icon={<Globe size={22} />} onClick={() => trackEvent("social_website_click", "click")} />
+            {settings.show_whatsapp_social !== false && <SocialLink href={whatsappHref} label="WhatsApp" imageUrl={settings.whatsapp_icon_url} icon={<MessageCircle size={22} />} onClick={() => trackEvent("social_whatsapp_click", "click")} />}
+            {settings.show_facebook_social !== false && <SocialLink href={normalizeUrl(settings.facebook_url)} label="Facebook" imageUrl={settings.facebook_icon_url} icon={<Facebook size={22} />} onClick={() => trackEvent("social_facebook_click", "click")} />}
+            {settings.show_instagram_social !== false && <SocialLink href={normalizeUrl(settings.instagram_url)} label="Instagram" imageUrl={settings.instagram_icon_url} icon={<Instagram size={22} />} onClick={() => trackEvent("social_instagram_click", "click")} />}
+            {settings.show_tiktok_social !== false && <SocialLink href={normalizeUrl(settings.tiktok_url)} label="TikTok" imageUrl={settings.tiktok_icon_url} icon={<Music2 size={22} />} onClick={() => trackEvent("social_tiktok_click", "click")} />}
+            {settings.show_website_social !== false && <SocialLink href={normalizeUrl(settings.website_url)} label="Website" imageUrl={settings.website_icon_url} icon={<Globe size={22} />} onClick={() => trackEvent("social_website_click", "click")} />}
             {customLinks.map((link) => (
               <SocialLink key={link.id} href={normalizeUrl(link.url)} label={link.label} imageUrl={link.icon_image_url} icon={getDynamicIcon(link.icon_name)} onClick={() => trackEvent("custom_link_click", "click", { label: link.label })} />
             ))}
@@ -1338,7 +1459,18 @@ function App() {
         return (
           <section className="custom-sections" aria-label="More information" key={sectionId}>
             {customSections.map((section) => (
-              <article className={`custom-section ${section.layout || "card"}`} key={section.id}>
+              <article
+                className={`custom-section ${section.layout || "card"}`}
+                key={section.id}
+                style={{
+                  "--custom-section-bg": section.background_color || "#ffffff",
+                  "--custom-section-border": section.border_color || "color-mix(in srgb, var(--accent) 16%, transparent)",
+                  "--custom-section-title": section.title_color || "var(--heading)",
+                  "--custom-section-text": section.text_color || "var(--body-text)",
+                  "--custom-section-button-bg": section.button_background_color || "transparent",
+                  "--custom-section-button-text": section.button_text_color || "var(--accent)",
+                }}
+              >
                 {section.image_url && <img src={section.image_url} alt="" />}
                 <div>
                   {section.title && <h2>{section.title}</h2>}
@@ -1374,6 +1506,31 @@ function App() {
           <section className="info-panel" aria-label="Business hours" key={sectionId}>
             <h2>{settings.text_business_hours_heading || fallbackSettings.text_business_hours_heading}</h2>
             <p>{settings.business_hours}</p>
+          </section>
+        );
+      case "company_video":
+        if (!showCompanyVideo) return null;
+        const youtubeEmbedUrl = getYouTubeEmbedUrl(selectedCompanyVideoUrl);
+        return (
+          <section className="company-video-section" aria-label="Company video" key={sectionId}>
+            <div>
+              <h2>{settings.company_video_title || fallbackSettings.company_video_title}</h2>
+              {settings.company_video_description && <p>{settings.company_video_description}</p>}
+            </div>
+            {youtubeEmbedUrl ? (
+              <iframe
+                src={youtubeEmbedUrl}
+                title={settings.company_video_title || fallbackSettings.company_video_title}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                onLoad={() => trackEvent("company_video_embed_load", "media")}
+              />
+            ) : (
+              <video controls playsInline poster={settings.company_video_poster_url || ""} onPlay={() => trackEvent("company_video_play", "media")}>
+                <source src={selectedCompanyVideoUrl} />
+              </video>
+            )}
           </section>
         );
       case "primary_cta":
@@ -1419,11 +1576,14 @@ function App() {
         return (
           <footer className="developer-contact-footer" key={sectionId}>
             <a
+              className={settings.developer_contact_style === "text" ? "text-only" : "button-style"}
               href={developerContactHref}
               onClick={() => trackEvent("developer_contact_click", "click")}
               style={{
                 "--developer-contact-bg": settings.developer_contact_button_color || fallbackSettings.developer_contact_button_color,
-                "--developer-contact-text": settings.developer_contact_button_text_color || fallbackSettings.developer_contact_button_text_color,
+                "--developer-contact-text": settings.developer_contact_style === "text"
+                  ? settings.developer_contact_button_text_color || settings.accent_color || settings.heading_color || fallbackSettings.accent_color
+                  : settings.developer_contact_button_text_color || fallbackSettings.developer_contact_button_text_color,
               }}
             >
               {settings.developer_contact_label || fallbackSettings.developer_contact_label}
@@ -1440,7 +1600,16 @@ function App() {
     if (settings.offers_countdown_enabled === false || offer.show_countdown === false || !countdownParts) return null;
 
     return (
-      <div className="offer-countdown">
+      <div
+        className="offer-countdown"
+        style={{
+          "--offer-countdown-bg": settings.offer_countdown_background_color || `linear-gradient(135deg, color-mix(in srgb, var(--accent) 86%, #111111), #17211f)`,
+          "--offer-countdown-label": settings.offer_countdown_label_color || fallbackSettings.offer_countdown_label_color,
+          "--offer-countdown-box": settings.offer_countdown_box_color || fallbackSettings.offer_countdown_box_color,
+          "--offer-countdown-number": settings.offer_countdown_number_color || fallbackSettings.offer_countdown_number_color,
+          "--offer-countdown-unit": settings.offer_countdown_unit_color || fallbackSettings.offer_countdown_unit_color,
+        }}
+      >
         <span>{settings.text_offer_countdown_label || fallbackSettings.text_offer_countdown_label}</span>
         <div className="offer-countdown-grid" aria-label="Offer countdown">
           {countdownParts.map((part) => (
@@ -1468,7 +1637,7 @@ function App() {
   return (
     <main className="page" style={customStyle}>
       <section className="business-card">
-        <button className="share-button" onClick={() => { trackEvent("share_button_click", "click"); setShareOpen(true); }} type="button" aria-label="Share this website">
+        <button className="share-button" onClick={shareSite} type="button" aria-label="Share this website">
           <Share2 size={20} />
         </button>
 
@@ -1490,9 +1659,9 @@ function App() {
             </div>
             <img className="share-qr" src={qrUrl} alt="QR code for this website" />
             <h2>{settings.business_name}</h2>
-            {shareLinks.length > 0 && (
+            {shareDisplayLinks.length > 0 && (
               <div className="share-socials" aria-label="Share links">
-                {shareLinks.map((link) => (
+                {shareDisplayLinks.map((link) => (
                   <SocialLink key={`${link.label}-${link.href}`} href={link.href} label={link.label} imageUrl={link.imageUrl} icon={link.icon} />
                 ))}
               </div>
@@ -1503,19 +1672,25 @@ function App() {
                 {copyLabel || settings.text_share_copy_button || fallbackSettings.text_share_copy_button}
               </button>
             </div>
-            {navigator.share && (
-              <button className="copy-button" onClick={shareSite} type="button">
-                <Share2 size={18} />
-                {settings.text_share_button || fallbackSettings.text_share_button}
-              </button>
-            )}
+            <button className="copy-button" onClick={() => shareSite({ openFallback: false })} type="button">
+              <Share2 size={18} />
+              {settings.text_share_button || fallbackSettings.text_share_button}
+            </button>
           </div>
         </div>
       )}
 
       {showOfferPopup && offerPopupOpen && activeOffer && (
         <div className="offer-popup" role="dialog" aria-modal="true" aria-label="Offers and announcements">
-          <section className="offer-popup-panel">
+          <section
+            className="offer-popup-panel"
+            style={{
+              "--offer-popup-bg": settings.offer_popup_background_color || fallbackSettings.offer_popup_background_color,
+              "--offer-popup-text": settings.offer_popup_text_color || fallbackSettings.offer_popup_text_color,
+              "--offer-popup-heading": settings.offer_popup_heading_color || "var(--heading)",
+              "--offer-popup-kicker": settings.offer_popup_kicker_color || "var(--accent)",
+            }}
+          >
             <button className="offer-close" onClick={() => setOfferPopupOpen(false)} type="button" aria-label="Close offers">
               ×
             </button>
@@ -1565,6 +1740,35 @@ function App() {
                   <ChevronRight size={18} />
                 </button>
               </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {showReferralOffer && referralOfferOpen && (
+        <div className="referral-popup" role="dialog" aria-modal="true" aria-label="Referral offer">
+          <section
+            className="referral-panel"
+            style={{
+              "--referral-bg": settings.referral_offer_background_color || fallbackSettings.referral_offer_background_color,
+              "--referral-text": settings.referral_offer_text_color || fallbackSettings.referral_offer_text_color,
+            }}
+          >
+            <button className="offer-close" onClick={() => setReferralOfferOpen(false)} type="button" aria-label="Close referral offer">
+              x
+            </button>
+            {settings.referral_offer_image_url && <img src={settings.referral_offer_image_url} alt="" />}
+            <p className="offer-kicker">Referral Offer</p>
+            <h2>{settings.referral_offer_title || fallbackSettings.referral_offer_title}</h2>
+            <p>{settings.referral_offer_description || fallbackSettings.referral_offer_description}</p>
+            {(settings.referral_offer_button_url || whatsappHref) && (
+              <a
+                className="offer-cta"
+                href={normalizeUrl(settings.referral_offer_button_url) || whatsappHref}
+                onClick={() => trackEvent("referral_offer_claim", "click", { referral_id: leadSource.referral_id })}
+              >
+                {settings.referral_offer_button_label || fallbackSettings.referral_offer_button_label}
+              </a>
             )}
           </section>
         </div>
