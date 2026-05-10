@@ -1181,6 +1181,10 @@ function App() {
 
   async function shareSite({ openFallback = true } = {}) {
     trackEvent("share_open", "share", { referral_url: settings.show_referral_offer !== false });
+    if (openFallback) {
+      setShareOpen(true);
+      return;
+    }
     if (navigator.share) {
       try {
         await navigator.share({
@@ -1192,10 +1196,6 @@ function App() {
       } catch (error) {
         if (error.name === "AbortError") return;
       }
-    }
-    if (openFallback) {
-      setShareOpen(true);
-      return;
     }
     await navigator.clipboard.writeText(shareUrl);
     setCopyLabel(settings.text_share_copied_button || fallbackSettings.text_share_copied_button);
