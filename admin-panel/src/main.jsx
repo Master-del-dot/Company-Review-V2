@@ -364,7 +364,7 @@ const defaultChatbotSettings = {
   accent_color: "#03736e",
   heading_color: "#03736e",
   ai_enabled: true,
-  ai_api_url: "http://localhost:10000",
+  ai_api_url: "",
   ai_system_prompt:
     "You are a warm human-like business assistant. Answer naturally using only the business knowledge provided. Keep replies short, friendly, and useful. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.",
 };

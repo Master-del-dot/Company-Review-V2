@@ -447,7 +447,7 @@ const fallbackChatbot = {
     accent_color: "#03736e",
     heading_color: "#03736e",
     ai_enabled: true,
-    ai_api_url: "http://localhost:10000",
+    ai_api_url: "",
     ai_system_prompt:
       "You are a warm human-like business assistant. Answer naturally using only the business knowledge provided. Keep replies short, friendly, and useful. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.",
   },
@@ -772,8 +772,12 @@ function AutomationChat({ settings }) {
 
   async function askAiBridge(text) {
     if (!chatSettings.ai_enabled || !chatSettings.ai_api_url) return null;
+    const apiBaseUrl = chatSettings.ai_api_url.replace(/\/$/, "");
+    const isLocalPage = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?/i.test(apiBaseUrl);
+    if (isLocalApi && !isLocalPage) return null;
     try {
-      const response = await fetch(`${chatSettings.ai_api_url.replace(/\/$/, "")}/chat`, {
+      const response = await fetch(`${apiBaseUrl}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

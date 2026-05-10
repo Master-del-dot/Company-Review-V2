@@ -11,7 +11,7 @@ create table if not exists public.chatbot_settings (
   accent_color text not null default '#03736e',
   heading_color text not null default '#03736e',
   ai_enabled boolean not null default true,
-  ai_api_url text not null default 'http://localhost:10000',
+  ai_api_url text,
   ai_system_prompt text not null default 'You are a warm human-like business assistant. Answer naturally using only the business knowledge provided. Keep replies short, friendly, and useful. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.',
   updated_at timestamptz not null default now()
 );
@@ -77,7 +77,7 @@ on conflict (id) do nothing;
 update public.chatbot_settings
 set
   ai_enabled = true,
-  ai_api_url = coalesce(nullif(ai_api_url, ''), 'http://localhost:10000'),
+  ai_api_url = nullif(ai_api_url, ''),
   ai_system_prompt = coalesce(nullif(ai_system_prompt, ''), 'You are a warm human-like business assistant. Answer naturally using only the business knowledge provided. Keep replies short, friendly, and useful. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.')
 where id = 1;
 

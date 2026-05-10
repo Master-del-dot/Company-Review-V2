@@ -1,334 +1,370 @@
-# Digital Business Card Website + Admin Panel
+# Company Review V2
 
-This project has three parts:
+Digital company review website, admin panel, Supabase backend, and AI chatbot bridge.
 
-- `public-site` - the restaurant/bar digital business card visitors see.
-- `admin-panel` - the private dashboard where admins edit all public content.
-- `supabase` - the database, storage, auth, and visitor-counter setup.
+This project is made to be copied and reused for many customer companies. Each customer gets their own Supabase project, public website, admin panel, and AI configuration.
 
-Brand color: `#03736e`
+## Project Parts
 
-## Run Locally
+- `public-site` - the public business/review/contact page visitors open.
+- `admin-panel` - the private dashboard used to edit the public site.
+- `ai-server` - a small backend bridge for Gemini/Ollama chatbot replies.
+- `supabase/migrations` - database, storage, security, chatbot, lead, and feature setup.
+- `FINAL_CLIENT_SETUP_GUIDE.md` - full baby-step guide for setting up a copied project for a new customer.
 
-Use `npm.cmd` on Windows PowerShell if `npm` is blocked by execution policy.
+## Main Features
+
+- Public digital business card/review page
+- Admin-controlled branding, colors, logo shape, images, videos, and sections
+- Google review, contact, WhatsApp, phone, email, map, and VCF contact download
+- Owner visiting card
+- Active/inactive social links
+- Custom text/image blocks with image replace/remove and color controls
+- Offers and announcements popup with countdown colors
+- Referral offer and native share flow
+- Company video from upload or URL
+- Customer detail form with admin-controlled fields and colors
+- Visitor analytics and lead tracking
+- Locked admin modules
+- Developer contact footer
+- AI chatbot with Gemini bridge, FAQ fallback, products/services, offers, and lead capture
+
+## Requirements
+
+- Node.js
+- npm
+- Supabase account
+- Render account, or another Node hosting provider, for live AI server
+- Gemini API key if you want real AI replies
+
+## Install
+
+From the project root:
+
+```powershell
+npm install
+```
+
+If Windows PowerShell blocks `npm`, use:
 
 ```powershell
 npm.cmd install
-npm.cmd run dev:public
 ```
 
-In another terminal:
+## Local Development
+
+Run public site:
 
 ```powershell
-npm.cmd run dev:admin
+npm run dev:public
 ```
 
-Local URLs:
+Public URL:
 
-- Public site: `http://localhost:5173`
-- Admin panel: `http://localhost:5174`
-
-## Supabase Setup, Tiny Tiny Steps
-
-1. Go to `https://supabase.com`.
-2. Make a free account or sign in.
-3. Click `New project`.
-4. Give it any name, like `Restro Elaichi Card`.
-5. Make a database password. Keep it somewhere safe.
-6. Click `Create new project`.
-7. Wait until Supabase finishes. It can take a minute.
-
-## Add the Database
-
-1. In Supabase, look at the left menu.
-2. Click `SQL Editor`.
-3. Click `New query`.
-4. Open this file in this project:
-
-   `supabase/migrations/001_initial_schema.sql`
-
-5. Copy all the SQL from that file.
-6. Paste it into the Supabase SQL editor.
-7. Click `Run`.
-
-Done. Your tables, security rules, visitor counter, and storage bucket now exist.
-
-## If You Already Ran the First SQL
-
-If your project was already set up before the share button, extra links, custom blocks, and color controls were added, do this one extra tiny step:
-
-1. In Supabase, click `SQL Editor`.
-2. Click `New query`.
-3. Open this file:
-
-   `supabase/migrations/002_god_level_controls.sql`
-
-4. Copy everything inside it.
-5. Paste it into Supabase.
-6. Click `Run`.
-
-That adds:
-
-- many separate color controls
-- unlimited extra social/action links
-- unlimited custom text/image blocks
-- security rules for those new tables
-
-## If You Need Offer Buttons
-
-If your Supabase project already existed before offer CTA buttons were added, run this small SQL file too:
-
-`supabase/migrations/003_offer_cta.sql`
-
-It adds two optional fields to offers:
-
-- `button_label` - text like `Buy Now`, `Follow Us`, or `Order Here`
-- `button_url` - the link opened when visitors click that button
-
-## Add the AI Customer Conversion Engine
-
-To enable the floating AI chatbot and the separate admin controls, run this SQL file in Supabase:
-
-`supabase/migrations/006_ai_conversion_engine.sql`
-
-Tiny steps:
-
-1. In Supabase, click `SQL Editor`.
-2. Click `New query`.
-3. Open `supabase/migrations/006_ai_conversion_engine.sql` from this project.
-4. Copy everything inside it.
-5. Paste it into Supabase.
-6. Click `Run`.
-
-This adds:
-
-- chatbot on/off settings
-- editable welcome, lead capture, WhatsApp, and offline messages
-- chatbot questions and answers
-- chatbot products/services
-- chatbot offers
-- AI lead capture table
-- chat event tracking table
-- secure public/admin Supabase policies
-
-If you already ran this migration before AI API controls were added, run this tiny SQL too:
-
-```sql
-alter table public.chatbot_settings
-add column if not exists ai_enabled boolean not null default false,
-add column if not exists ai_api_url text,
-add column if not exists ai_system_prompt text not null default 'You are a helpful sales assistant. Answer naturally using only the business knowledge provided. If the answer is uncertain, ask one short follow-up question and offer WhatsApp.';
+```text
+http://localhost:5173
 ```
 
-## Free AI Setup Like Tiny Steps
+Run admin panel:
 
-Important truth: no hosted AI company can promise free forever. For 100% free lifetime, use open-source AI on your own computer/server. This project supports that through `ai-server`.
-
-### Step 1: Deploy AI Bridge on Render
-
-1. Push this project to GitHub.
-2. Go to `https://render.com`.
-3. Sign in.
-4. Click `New`.
-5. Click `Web Service`.
-6. Connect your GitHub repo.
-7. Set `Root Directory` to:
-
-   `ai-server`
-
-8. Set `Build Command`:
-
-   `npm install`
-
-9. Set `Start Command`:
-
-   `npm start`
-
-10. Choose the `Free` instance.
-11. Click `Create Web Service`.
-12. Wait until deploy finishes.
-13. Copy your Render URL. It will look like:
-
-   `https://company-review-ai-server.onrender.com`
-
-14. Test this URL in browser:
-
-   `https://company-review-ai-server.onrender.com/health`
-
-You should see JSON with `"ok": true`.
-
-### Step 2: Connect It in Admin Panel
-
-1. Open admin panel.
-2. Click AI navigation: `Chatbot`.
-3. Paste your Render URL into `AI API URL`.
-4. Turn on `AI Reply Enabled`.
-5. Click `Save Chatbot`.
-6. Open public site and ask a question.
-
-### Step 3: Make It Real AI With Ollama
-
-The Render bridge works alone, but for real open-source AI answers you need Ollama.
-
-1. Install Ollama on your computer from `https://ollama.com`.
-2. Open terminal.
-3. Run:
-
-   `ollama pull llama3.2:1b`
-
-4. Run:
-
-   `ollama serve`
-
-5. Your Ollama runs locally at:
-
-   `http://localhost:11434`
-
-Render cannot directly access your `localhost`. To connect local Ollama to Render, expose it with a tunnel such as Cloudflare Tunnel or another HTTPS tunnel, then set Render env var:
-
-`OLLAMA_BASE_URL=https://your-tunnel-url`
-
-If `OLLAMA_BASE_URL` is empty, the AI server still gives knowledge-based smart replies, but it is not a full LLM.
-
-Render free web services can spin down after idle time and have monthly limits. That is okay for testing, but for always-instant production, use a paid server or run the AI bridge on your own always-on machine.
-
-## Create the Admin Login
-
-1. In Supabase, click `Authentication`.
-2. Click `Users`.
-3. Click `Add user`.
-4. Add your admin email and password.
-5. After the user is created, click the user.
-6. Copy the user's `User UID`.
-7. Go back to `SQL Editor`.
-8. Run this, but replace `PASTE-USER-UID-HERE` with the UID you copied:
-
-```sql
-insert into public.admin_users (user_id)
-values ('PASTE-USER-UID-HERE');
+```powershell
+npm run dev:admin
 ```
 
-That tells the app, "this person is allowed to use the admin panel."
+Admin URL:
 
-## Add Supabase Keys to Both Apps
+```text
+http://localhost:5174
+```
 
-1. In Supabase, click `Project Settings`.
-2. Click `API`.
-3. Copy `Project URL`.
-4. Copy the `anon public` key.
-5. In `public-site`, copy `.env.example` and name the copy `.env`.
-6. In `admin-panel`, copy `.env.example` and name the copy `.env`.
-7. Put the same values into both `.env` files:
+Run AI server:
+
+```powershell
+cd ai-server
+npm start
+```
+
+AI server URL:
+
+```text
+http://localhost:10000
+```
+
+Health check:
+
+```text
+http://localhost:10000/health
+```
+
+## Environment Files
+
+Create this file:
+
+```text
+public-site/.env
+```
+
+Use:
 
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-## Use the Admin Panel
+Create this file:
 
-1. Start the admin panel with:
-
-```powershell
-npm.cmd run dev:admin
+```text
+admin-panel/.env
 ```
 
-2. Open `http://localhost:5174`.
-3. Sign in with the email and password you created.
-4. Edit logo, name, tagline, color, contacts, socials, map, VCF, and offers.
-5. Click `Save Settings`.
+Use the same values:
 
-The admin panel has two navigation rows:
-
-- Main business card navigation: `Overview`, `Brand`, `Contact`, `Social`, `Content`
-- AI automation navigation: `Chatbot`, `Q&A`, `Products`, `Leads`
-
-Use the AI automation navigation to control the public chatbot without editing code.
-
-## God Level Controls
-
-The admin panel now has:
-
-- `God Level Colors` - change page background, card background, headings, body text, buttons, icons, and accent/link colors separately.
-- `Extra Links` - add more links beyond Facebook, WhatsApp, Instagram, TikTok, and Website. Use icon names like `globe`, `whatsapp`, `facebook`, `instagram`, `tiktok`, `phone`, `mail`, or `external`.
-- `Custom Text / Image Blocks` - add extra editable blocks with title, text, image, button, layout, active toggle, and sort order.
-- Share button - public users can share using their phone/browser share menu, or open a QR/link popup when native sharing is unavailable.
-
-## Add a Google Map
-
-1. Open Google Maps.
-2. Search your restaurant.
-3. Click `Share`.
-4. Click `Embed a map`.
-5. Copy the iframe code.
-6. Paste it into `Map Embed Iframe Code` in the admin panel.
-7. Also paste the normal Google Maps share link into `Google Maps URL`.
-
-## VCF Contact File
-
-Create a `.vcf` file like this:
-
-```vcf
-BEGIN:VCARD
-VERSION:3.0
-FN:restroelaichi
-ORG:restroelaichi
-TEL:+977XXXXXXXXXX
-EMAIL:hello@example.com
-ADR:;;Shivachowk;Lalitpur;;44700;Nepal
-URL:https://example.com
-END:VCARD
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Upload it in the admin panel under `Upload VCF Contact File`.
+For local AI server, create:
 
-## Automatic Storage Cleanup
+```text
+ai-server/.env
+```
 
-Admin uploads automatically keep only the latest 5 files in each Storage folder, such as:
+Use:
 
-- `logos`
-- `offers`
-- `sections`
-- `vcf`
-- `social-icons/whatsapp`
-- `social-icons/facebook`
-- `social-icons/instagram`
-- `social-icons/tiktok`
-- `social-icons/website`
-- `custom-link-icons`
+```env
+PORT=10000
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash-lite
+OLLAMA_BASE_URL=
+OLLAMA_MODEL=llama3.2:1b
+```
 
-When a 6th file is uploaded to the same folder, the oldest file in that folder is removed from Supabase Storage.
+Important:
 
-## If You Need Uploaded Social Logos
+```text
+Do not put Gemini API key in public-site/.env or admin-panel/.env.
+ai-server/.env is ignored by git.
+```
 
-Run this SQL file in Supabase if your project already existed before manual social logo uploads were added:
+## Supabase Setup
 
-`supabase/migrations/004_social_icon_uploads.sql`
+Create a new Supabase project for each customer.
 
-It adds logo URL columns for WhatsApp, Facebook, Instagram, TikTok, Website, and extra custom links.
+Run these migrations in Supabase SQL Editor in this exact order:
 
-## Safe Admin Credential Table
+```text
+supabase/migrations/001_core_schema.sql
+supabase/migrations/002_ai_leads_and_engagement.sql
+supabase/migrations/003_growth_forms_and_admin_locks.sql
+supabase/migrations/004_feature_schema_and_permissions.sql
+supabase/migrations/005_feature_defaults_and_constraints.sql
+```
 
-If you want a separate admin credential table, run:
-
-`supabase/migrations/005_safe_admin_credentials.sql`
-
-It stores:
-
-- admin email
-- hashed password
-
-It does not store readable/plain passwords. To set the value, run:
+After migrations, set the admin login:
 
 ```sql
-select public.set_admin_credentials('your-email@example.com', 'your-new-password');
+select public.set_admin_credentials('owner@example.com', 'change-this-password');
 ```
 
-The current admin panel still uses Supabase Auth for secure database and Storage permissions.
+Change the email/password for the real customer.
 
-## Deploy Later
+## Build
 
-You can deploy `public-site` and `admin-panel` separately on Vercel, Netlify, or any static host. Each app needs the same two environment variables:
+Build both apps:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+```powershell
+npm run build:all
+```
+
+Build only public site:
+
+```powershell
+npm --workspace public-site run build
+```
+
+Build only admin panel:
+
+```powershell
+npm --workspace admin-panel run build
+```
+
+## AI Chatbot Setup
+
+Local testing:
+
+1. Start `ai-server`.
+2. Open admin panel.
+3. Go to `AI Chatbot`.
+4. Set:
+
+```text
+AI Reply Enabled = ON
+AI API URL = http://localhost:10000
+```
+
+5. Save chatbot.
+
+Live website:
+
+Use the deployed AI server URL, not localhost.
+
+Example:
+
+```text
+AI API URL = https://your-ai-server.onrender.com
+```
+
+Important:
+
+```text
+Never use http://localhost:10000 on a live public website.
+Browsers may show a scary local-network warning.
+```
+
+## Deploy AI Server On Render
+
+Create a Render Web Service with:
+
+```text
+Root Directory: ai-server
+Build Command: npm install
+Start Command: npm start
+Plan: Free
+```
+
+Environment variables:
+
+```text
+AI_PROVIDER = gemini
+GEMINI_API_KEY = your-gemini-api-key
+GEMINI_MODEL = gemini-2.5-flash-lite
+```
+
+Test after deploy:
+
+```text
+https://your-ai-server.onrender.com/health
+```
+
+It should show:
+
+```text
+ok: true
+provider: gemini
+gemini: true
+```
+
+Render free services can sleep after inactivity, so the first chatbot reply after sleep can be slower.
+
+## Deploy Public Site
+
+Static host settings:
+
+```text
+Root Directory: public-site
+Build Command: npm install && npm run build
+Publish Directory: dist
+```
+
+Environment variables:
+
+```text
+VITE_SUPABASE_URL = customer Supabase URL
+VITE_SUPABASE_ANON_KEY = customer Supabase anon key
+```
+
+## Deploy Admin Panel
+
+Static host settings:
+
+```text
+Root Directory: admin-panel
+Build Command: npm install && npm run build
+Publish Directory: dist
+```
+
+Environment variables:
+
+```text
+VITE_SUPABASE_URL = customer Supabase URL
+VITE_SUPABASE_ANON_KEY = customer Supabase anon key
+```
+
+Give the admin panel URL only to the customer/owner.
+
+## Reusing For A New Customer
+
+For every new customer, change:
+
+- Supabase project
+- `public-site/.env`
+- `admin-panel/.env`
+- Admin email/password
+- Business name, logo, phone, WhatsApp, email, address
+- Google review link
+- Social links
+- Offers, referral, video, and custom blocks
+- Live AI API URL in admin
+
+Usually keep the same:
+
+- Codebase
+- Migration files
+- AI server code
+- Gemini model name
+- Admin panel structure
+
+For the full step-by-step customer setup, read:
+
+[FINAL_CLIENT_SETUP_GUIDE.md](./FINAL_CLIENT_SETUP_GUIDE.md)
+
+## Common Fixes
+
+Render says:
+
+```text
+Missing script: build
+```
+
+Fix Render settings:
+
+```text
+Root Directory: ai-server
+Build Command: npm install
+Start Command: npm start
+```
+
+Browser says the site wants to access other apps/services:
+
+```text
+Live AI API URL is probably http://localhost:10000.
+Change it to your Render AI URL in admin.
+```
+
+Chatbot gives fallback, not AI:
+
+```text
+AI Reply Enabled must be ON.
+AI API URL must be correct.
+Open /health and confirm gemini: true.
+Check GEMINI_API_KEY exists in Render env vars.
+```
+
+Admin does not load:
+
+```text
+Check admin-panel/.env.
+Run all Supabase migrations 001 to 005.
+Check admin credentials were created.
+```
+
+## Security Notes
+
+- Supabase anon key is okay for frontend.
+- Never expose Supabase service role key in frontend.
+- Never expose Gemini API key in frontend.
+- Keep `ai-server/.env` private.
+- Regenerate API keys if they were pasted in chat or shared publicly.
+
