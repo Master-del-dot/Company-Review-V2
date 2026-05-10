@@ -1179,16 +1179,55 @@ function App() {
     settings.developer_contact_message,
   );
 
+  async function createQrShareFile() {
+    if (typeof File === "undefined" || typeof navigator.canShare !== "function") return null;
+    const response = await fetch(qrUrl);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    const businessFileName = (settings.business_name || "business-card")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    return new File([blob], `${businessFileName || "business-card"}-qr.png`, {
+      type: blob.type || "image/png",
+    });
+  }
+
   async function shareSite({ openFallback = true } = {}) {
     trackEvent("share_open", "share", { referral_url: settings.show_referral_offer !== false });
     if (openFallback) {
       setShareOpen(true);
       return;
     }
+    const title = settings.business_name || "Digital Business Card";
+    const shareTextWithUrl = [settings.tagline || "", shareUrl].filter(Boolean).join("\n");
     if (navigator.share) {
       try {
+        const qrFile = await createQrShareFile();
+        if (qrFile) {
+          const qrShareData = {
+            title,
+            text: shareTextWithUrl,
+            url: shareUrl,
+            files: [qrFile],
+          };
+          const canShareQrWithUrl = navigator.canShare(qrShareData);
+          const qrShareDataWithoutUrl = {
+            title,
+            text: shareTextWithUrl,
+            files: [qrFile],
+          };
+          if (canShareQrWithUrl || navigator.canShare(qrShareDataWithoutUrl)) {
+            await navigator.share(canShareQrWithUrl ? qrShareData : qrShareDataWithoutUrl);
+            return;
+          }
+        }
+      } catch (error) {
+        if (error.name === "AbortError") return;
+      }
+      try {
         await navigator.share({
-          title: settings.business_name || "Digital Business Card",
+          title,
           text: settings.tagline || "",
           url: shareUrl,
         });
